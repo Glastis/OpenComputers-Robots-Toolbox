@@ -141,16 +141,7 @@ function equip_pickaxe(bloc_name, force)
 	robot.select(1)
 	return true
 end
-function unequip()
-	if not select_empty_case() then
-		clean_inventory()
-		if not select_empty_case() then
-			return false
-		end
-	end
-	component.inventory_controller.equip()
-	return true
-end
+
 function check_and_extract()
 	local success, dir
 	success, dir = check_filon()
@@ -335,61 +326,9 @@ function extract_filon(direction)
 	end
 	check_and_extract()
 end
-function select_item(item, meta)
-    local slot = 1
-	local size = robot.inventorySize()
 
-	errno = "unknown error"
-    while slot <= size do
-        local data = component.inventory_controller.getStackInInternalSlot(slot)
-        if data and data.name == item and (not meta or data.damage == meta) then
-            robot.select(slot)
-            return true
-		end
-        slot = slot + 1
-	end
-	errno = "Can't select: " .. item
-	if meta then
-		errno = errno .. " with metadata: "  .. meta
-	end
-    return false
-end
-function select_next_item(slot, item, meta)
-	local data
-	local size = robot.inventorySize()
 
-	while slot <= robot.inventorySize() do
-		data = component.inventory_controller.getStackInInternalSlot(slot)
-		if data and data.name == item and (not meta or meta == data.damage) then
-			robot.select(slot)
-			return true
-		end
-		slot = slot + 1
-	end
-	return false
-end
-function repack_item(item, meta)
-	local slot = 1
-	local data
 
-	if item == "minecraft:stone_pickaxe" or item == "minecraft:diamond_pickaxe" then
-		return true
-	end
-	while slot < robot.inventorySize() do
-		data = component.inventory_controller.getStackInInternalSlot(slot)
-		if not data or ((data.name == item and data.size < 64) and (not meta or meta == data.damage)) then
-			if select_next_item(slot + 1, item, meta) then
-				robot.transferTo(slot)
-				data = component.inventory_controller.getStackInInternalSlot(slot)
-			else
-				return true
-			end
-		else
-			slot = slot + 1
-		end
-	end
-	return true
-end
 function clean_inventory()
 	local slot
 	local data
@@ -536,13 +475,7 @@ function turn(bool)
 		robot.turnLeft()
 	end
 end
-function xor_bool(bool)
-	if bool then
-		return false
-		else
-		return true
-	end
-end
+
 function core(xmax, tunmax, dir)
 	local bool = true
 	local first = true
@@ -571,48 +504,7 @@ function core(xmax, tunmax, dir)
 		print("Tunnel(s) restant(s): " .. tostring(tunmax))
 	end
 end
-function push_item_after_slot(from)
-	local slot = from + 1
 
-	robot.select(from)
-	while slot < robot.inventorySize() and component.inventory_controller.getStackInInternalSlot(slot) do
-		slot = slot + 1
-	end
-	if slot < robot.inventorySize() and robot.transferTo(slot) then
-		return true
-	end
-	return false
-end
-function free_crafting_table()
-	local slot = 1
-	local data
-	local tried = false
-
-	while slot <= 11 do
-		if slot ~= 4 and slot ~= 8 then
-			if component.inventory_controller.getStackInInternalSlot(slot) and not push_item_after_slot(slot) and not tried then
-				clean_inventory()
-				tried = true
-			elseif component.inventory_controller.getStackInInternalSlot(slot) and not push_item_after_slot(slot) then
-				return false
-			end
-		end
-		slot = slot + 1
-	end
-	return true
-end
-function compact_all()
-	compact_item(9, "minecraft:dye", 4)
-	repack_item("minecraft:dye", 4)
-	compact_item(9, "minecraft:coal", 0)
-	repack_item("minecraft:coal", 0)
-	compact_item(9, "minecraft:redstone")
-	repack_item("minecraft:redstone")
-	compact_item(4, "minecraft:quartz")
-	repack_item("minecraft:quartz")
-	compact_item(4, "minecraft:glowstone_dust")
-	repack_item("minecraft:glowstone_dust")
-end
 function craft_pickaxe(material)
 	if item_amount("minecraft:stick") < 2 and not craft_sticks() then
 		return false
@@ -677,19 +569,7 @@ function pickaxe_materials()
 	end
 	return false
 end
-function empty_cases_amount()
-	local slot = 1
-	local empty_slots = 0
-	local size = robot.inventorySize()
 
-	while slot <= size do
-        if not component.inventory_controller.getStackInInternalSlot(slot) then
-			empty_slots = empty_slots + 1
-		end
-        slot = slot + 1
-	end
-	return empty_slots
-end
 function select_empty_case()
 	local slot = 1
 
@@ -702,90 +582,10 @@ function select_empty_case()
 	end
 	return false
 end
-function select_item_out_of_workbench(item, meta)
-	local slot = 4
-	local data
-	local size = robot.inventorySize()
 
-	while slot <= size do
-		if slot == 5 or slot == 9 then
-			slot = slot + 3
-		end
-		data = component.inventory_controller.getStackInInternalSlot(slot)
-		if data and data.name == item and (not meta or data.damage == meta) then
-			robot.select(slot)
-			return true
-		end
-		slot = slot + 1
-	end
-	return false
-end
-function place_item_for_craft(item, to, meta)
-	local craft = {}
 
-	craft[1] = 1
-	craft[2] = 2
-	craft[3] = 3
-	craft[4] = 5
-	craft[5] = 6
-	craft[6] = 7
-	craft[7] = 9
-	craft[8] = 10
-	craft[9] = 11
-	if to > 9 then
-		print("place_item_for_craft: slot can't be > than 9")
-		os.exit()
-	end
-	if select_item_out_of_workbench(item, meta) and robot.transferTo(craft[to], 1) then
-		return true
-	end
-	return false
-end
-function craft_all_blocs(bloc_size, item, meta)
-	if bloc_size == 9 then
-		while 	place_item_for_craft(item, 1, meta) and
-				place_item_for_craft(item, 2, meta) and
-				place_item_for_craft(item, 3, meta) and
-				place_item_for_craft(item, 4, meta) and
-				place_item_for_craft(item, 5, meta) and
-				place_item_for_craft(item, 6, meta) and
-				place_item_for_craft(item, 7, meta) and
-				place_item_for_craft(item, 8, meta) and
-				place_item_for_craft(item, 9, meta) do
-			os.sleep(0.1)
-		end
-	elseif bloc_size == 4 then
-		while 	place_item_for_craft(item, 1, meta) and
-				place_item_for_craft(item, 2, meta) and
-				place_item_for_craft(item, 4, meta) and
-				place_item_for_craft(item, 5, meta) do
-			os.sleep(0.1)
-		end
-	end
-	return component.crafting.craft()
-end
-function compact_item(bloc_size, item, meta)
-	local amount = item_amount(item, meta)
 
-	if amount >= bloc_size and free_crafting_table() then
-		craft_all_blocs(bloc_size, item, meta)
-		clean_inventory()
-	end
-end
-function item_amount(item, meta)
-    local slot = 1
-	local size = robot.inventorySize()
-	local amount = 0
 
-    while slot <= size do
-        local data = component.inventory_controller.getStackInInternalSlot(slot)
-        if data and data.name == item and (not meta or data.damage == meta) then
-			amount = amount + data.size
-		end
-        slot = slot + 1
-	end
-    return amount
-end
 function stock_minerals()
 	local slot = 1
 
@@ -803,40 +603,8 @@ function stock_minerals()
 		end
 	end
 end
-function get_free_slot_in_chest(chest_side)
-	local slot
-	local inv_size
-	local data
 
-	slot = 1
-	if not chest_side then
-		chest_side = side.front
-	end
-	inv_size = component.inventory_controller.getInventorySize(chest_side)
-	while slot < inv_size do
-		data = component.inventory_controller.getStackInSlot(chest_side, slot)
-		if not data then
-			return slot
-		end
-		slot = slot + 1
-	end
-	return false
-end
-function dump_slot_to_chest(chest_side, from_slot, amount, to_slot)
-	if not to_slot then
-		to_slot = get_free_slot_in_chest(chest_side)
-		if not to_slot then
-			return false
-		end
-	end
-	robot.select(from_slot)
-	if not amount then
-		component.inventory_controller.dropIntoSlot(side.front, to_slot)
-	else
-		component.inventory_controller.dropIntoSlot(side.front, to_slot, amount)
-	end
-	return true
-end
+
 function dump_to_ender_chest()
 	local slot = 1
 	local dump_slot

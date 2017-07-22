@@ -26,3 +26,39 @@ function get_item_from_chest(name, meta, amount, orientation)
 	end
 	return false
 end
+
+function get_free_slot_in_chest(chest_side)
+	local slot
+	local inv_size
+	local data
+
+	slot = 1
+	if not chest_side then
+		chest_side = side.front
+	end
+	inv_size = component.inventory_controller.getInventorySize(chest_side)
+	while slot < inv_size do
+		data = component.inventory_controller.getStackInSlot(chest_side, slot)
+		if not data then
+			return slot
+		end
+		slot = slot + 1
+	end
+	return false
+end
+
+function dump_slot_to_chest(chest_side, from_slot, amount, to_slot)
+	if not to_slot then
+		to_slot = get_free_slot_in_chest(chest_side)
+		if not to_slot then
+			return false
+		end
+	end
+	robot.select(from_slot)
+	if not amount then
+		component.inventory_controller.dropIntoSlot(side.front, to_slot)
+	else
+		component.inventory_controller.dropIntoSlot(side.front, to_slot, amount)
+	end
+	return true
+end
