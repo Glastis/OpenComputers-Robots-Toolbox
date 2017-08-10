@@ -62,3 +62,25 @@ function craft_all_blocs(bloc_size, item, meta)
 	end
 	return component.crafting.craft()
 end
+
+local function compact_item(bloc_size, item, meta)
+	local amount = item_amount(item, meta)
+
+	if amount >= bloc_size and free_crafting_table() then
+		craft_all_blocs(bloc_size, item, meta)
+		clean_inventory()
+	end
+end
+
+local function compact_all()
+	compact_item(9, "minecraft:dye", 4)
+	repack_item("minecraft:dye", 4)
+	compact_item(9, "minecraft:coal", 0)
+	repack_item("minecraft:coal", 0)
+	compact_item(9, "minecraft:redstone")
+	repack_item("minecraft:redstone")
+	compact_item(4, "minecraft:quartz")
+	repack_item("minecraft:quartz")
+	compact_item(4, "minecraft:glowstone_dust")
+	repack_item("minecraft:glowstone_dust")
+end

@@ -1,7 +1,9 @@
 local robot = require("robot")
 local side = require("sides")
 
-function forward(amount, force)
+local movement = {}
+
+local function forward(amount, force)
 	local i
 
 	i = amount
@@ -12,16 +14,17 @@ function forward(amount, force)
 		if robot.forward() then
 			i = i - 1
 		elseif force then
-      robot.swing()
-      os.sleep(0.5)
-    else
+			robot.swing()
+			os.sleep(0.5)
+		else
 			os.sleep(2)
 			print("Can't forward. Please move this shit.")
 		end
 	end
 end
+movement.forward = forward
 
-function up(amount, force)
+local function up(amount, force)
 	if not amount then
 		amount = 1
 	end
@@ -37,8 +40,9 @@ function up(amount, force)
 		end
 	end
 end
+movement.up = up
 
-function down(amount, force)
+local function down(amount, force)
 	if not amount then
 		amount = 1
 	end
@@ -54,8 +58,9 @@ function down(amount, force)
 		end
 	end
 end
+movement.down = down
 
-function move_orientation(orientation)
+local function move_orientation(orientation)
 	if orientation == side.left then
 		robot.turnLeft()
 	elseif orientation == side.right then
@@ -65,24 +70,26 @@ function move_orientation(orientation)
 		robot.turnRight()
 	end
 end
+movement.move_orientation = move_orientation
 
-function move_orientation_revert(orientation)
-	if orientation == robot.left then
+local function move_orientation_revert(orientation)
+	if orientation == side.left then
 		robot.turnRight()
-	elseif orientation == robot.right then
+	elseif orientation == side.right then
 		robot.turnLeft()
-	elseif orientation == robot.back then
+	elseif orientation == side.back then
 		robot.turnLeft()
 		robot.turnLeft()
 	end
 end
+movement.move_orientation_revert = move_orientation_revert
 
-function move(amount, orientation, force)
+local function move(amount, orientation, force)
 	if orientation then
 		move_orientation(orientation)
-		if orientation == up then
+		if orientation == side.up then
 			up(amount, force)
-		elseif orientation == down then
+		elseif orientation == side.down then
 			down(amount, force)
 		else
 			forward(amount, force)
@@ -92,3 +99,31 @@ function move(amount, orientation, force)
 		forward(amount, force)
 	end
 end
+movement.move = move
+
+local function turn_bool(bool)
+	if bool then
+		robot.turnLeft()
+	else
+		robot.turnRight()
+	end
+end
+movement.turn_bool = turn_bool
+
+local function turn_left()
+	robot.turnLeft()
+end
+movement.turn_left = turn_left
+
+local function turn_right()
+	robot.turnRight()
+end
+movement.turn_left = turn_right
+
+local function turn_back()
+	robot.turnRight()
+	robot.turnRight()
+end
+movement.turn_back = turn_back
+
+return movement
