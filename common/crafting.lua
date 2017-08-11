@@ -1,14 +1,21 @@
-function free_crafting_table()
+local component = require('component')
+local robot = require('robot')
+
+local inventory = require('inventory')
+
+local crafting = {}
+
+local function free_crafting_table()
 	local slot = 1
 	local data
 	local tried = false
 
 	while slot <= 11 do
 		if slot ~= 4 and slot ~= 8 then
-			if component.inventory_controller.getStackInInternalSlot(slot) and not push_item_after_slot(slot) and not tried then
-				clean_inventory()
+			if component.inventory_controller.getStackInInternalSlot(slot) and not inventory.push_item_after_slot(slot) and not tried then
+				inventory.clean_inventory()
 				tried = true
-			elseif component.inventory_controller.getStackInInternalSlot(slot) and not push_item_after_slot(slot) then
+			elseif component.inventory_controller.getStackInInternalSlot(slot) and not inventory.push_item_after_slot(slot) then
 				return false
 			end
 		end
@@ -16,8 +23,9 @@ function free_crafting_table()
 	end
 	return true
 end
+crafting.free_crafting_table = free_crafting_table
 
-function place_item_for_craft(item, to, meta)
+local function place_item_for_craft(item, to, meta)
 	local craft = {}
 
 	craft[1] = 1
@@ -30,16 +38,17 @@ function place_item_for_craft(item, to, meta)
 	craft[8] = 10
 	craft[9] = 11
 	if to > 9 then
-		print("place_item_for_craft: slot can't be > than 9")
+		print("ERROR: place_item_for_craft: slot can't be > than 9")
 		os.exit()
 	end
-	if select_item_out_of_workbench(item, meta) and robot.transferTo(craft[to], 1) then
+	if inventory.select_item_out_of_workbench(item, meta) and robot.transferTo(craft[to], 1) then
 		return true
 	end
 	return false
 end
+crafting.place_item_for_craft = place_item_for_craft
 
-function craft_all_blocs(bloc_size, item, meta)
+local function craft_bloc(bloc_size, item, meta)
 	if bloc_size == 9 then
 		while 	place_item_for_craft(item, 1, meta) and
 				place_item_for_craft(item, 2, meta) and
@@ -62,25 +71,31 @@ function craft_all_blocs(bloc_size, item, meta)
 	end
 	return component.crafting.craft()
 end
+crafting.craft_bloc = craft_bloc
 
-local function compact_item(bloc_size, item, meta)
-	local amount = item_amount(item, meta)
+local function compact_item_to_bloc(bloc_size, item, meta)
+	local amount
 
+	amount = inventory.item_amount(item, meta)
 	if amount >= bloc_size and free_crafting_table() then
-		craft_all_blocs(bloc_size, item, meta)
-		clean_inventory()
+		craft_bloc(bloc_size, item, meta)
+		inventory.clean_inventory()
 	end
 end
+crafting.compact_item_to_bloc = compact_item_to_bloc
 
-local function compact_all()
-	compact_item(9, "minecraft:dye", 4)
-	repack_item("minecraft:dye", 4)
-	compact_item(9, "minecraft:coal", 0)
-	repack_item("minecraft:coal", 0)
-	compact_item(9, "minecraft:redstone")
-	repack_item("minecraft:redstone")
-	compact_item(4, "minecraft:quartz")
-	repack_item("minecraft:quartz")
-	compact_item(4, "minecraft:glowstone_dust")
-	repack_item("minecraft:glowstone_dust")
+local function compact_all_items_blocs()
+	compact_item_to_bloc(9, "minecraft:dye", 4)
+	inventory.repack_item("minecraft:dye", 4)
+	compact_item_to_bloc(9, "minecraft:coal", 0)
+	inventory.repack_item("minecraft:coal", 0)
+	compact_item_to_bloc(9, "minecraft:redstone")
+	inventory.repack_item("minecraft:redstone")
+	compact_item_to_bloc(4, "minecraft:quartz")
+	inventory.repack_item("minecraft:quartz")
+	compact_item_to_bloc(4, "minecraft:glowstone_dust")
+	inventory.repack_item("minecraft:glowstone_dust")
 end
+crafting.compact_all_items_blocs = compact_all_items_blocs
+
+return crafting
