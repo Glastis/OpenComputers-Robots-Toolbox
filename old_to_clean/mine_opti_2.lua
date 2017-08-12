@@ -1,4 +1,4 @@
-local build = 45
+local build = 48
 --[[
 		Seriously, who cares of headers ?
 		License ? Well, consider that script is on MIT license and do whateaver you want with it. I don't care.
@@ -6,7 +6,7 @@ local build = 45
 ]]--
 
 
-local version = "2.0.1.2"
+local version = "2.0.1.3"
 local robot = require("robot")
 local side = require("sides")
 local component = require("component")
@@ -96,18 +96,18 @@ function init()
 	end
 end
 function my_split(inputstr, sep)
-        if sep == nil then
-                sep = "%s"
-        end
-        local t={} ; i=1
-        for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-                t[i] = str
-                i = i + 1
-				if i > 20 then
-					return t
-				end
-        end
-        return t
+	if sep == nil then
+		sep = "%s"
+	end
+	local t={} ; i=1
+	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+		t[i] = str
+		i = i + 1
+		if i > 20 then
+			return t
+		end
+	end
+	return t
 end
 function check_update()
 	local f
@@ -175,10 +175,77 @@ function file_exists(name)
 	return false
 end
 function get_minerals()
-	if not file_exists(config_filename) and not write_default_config(config_filename, "minecraft:diamond_ore\nminecraft:iron_ore\nminecraft:gold_ore\nminecraft:emerald_ore\nminecraft:lapis_ore\nminecraft:dye\nminecraft:iron_ingot\nminecraft:emerald\nminecraft:diamond\nminecraft:diamond_block\nminecraft:coal_block\nminecraft:lapis_block\nminecraft:redstone_block\nminecraft:glowstone\nminecraft:glowstone_dust\nminecraft:quartz\nminecraft:quartz_ore\nminecraft:quartz_block\nminecraft:chest\nminecraft:diamond_pickaxe\nminecraft:stone_pickaxe\nminecraft:iron_pickaxe\nminecraft:log\nminecraft:planks\nminecraft:stick\nEnderStorage:enderChest\nsimpleores:copper_ore\nsimpleores:tin_ore\nsimpleores:mythril_ore\nsimpleores:adamantium_ore\nsimpleores:onyx_ore\nIC2:blockOreCopper\nIC2:blockOreTin\nIC2:blockOreUran\nIC2:blockOreLead\nminechem:tile.oreUranium\nqCraft:quantumore\nqCraft:quantumoreglowing\ntc:oreTC\nProjRed|Exploration:projectred.exploration.ore\nminecraft:redstone\nminecraft:coal_ore\nminecraft:coal\nThermalFoundation:Ore\nminecraft:redstone_ore\nqCraft:dust\nBigReactors:YelloriteOre\ntc:oreTC\nThermalFoundation:Ore\nSGCraft:naquadahOre\nProjRed|Core:projected.core.part\n") then
+	if not file_exists(config_filename) and not write_default_config(config_filename, "minecraft:diamond_ore\n" ..
+			                                                                          "minecraft:iron_ore\n" ..
+			                                                                          "minecraft:gold_ore\n" ..
+			                                                                          "minecraft:emerald_ore\n" ..
+			                                                                          "minecraft:lapis_ore\n" ..
+			                                                                          "minecraft:dye\n" ..
+			                                                                          "minecraft:iron_ingot\n" ..
+			                                                                          "minecraft:emerald\n" ..
+			                                                                          "minecraft:diamond\n" ..
+			                                                                          "minecraft:diamond_block\n" ..
+			                                                                          "minecraft:coal_block\n" ..
+			                                                                          "minecraft:lapis_block\n" ..
+			                                                                          "minecraft:redstone_block\n" ..
+			                                                                          "minecraft:glowstone\n" ..
+			                                                                          "minecraft:glowstone_dust\n" ..
+			                                                                          "minecraft:quartz\n" ..
+			                                                                          "minecraft:quartz_ore\n" ..
+			                                                                          "minecraft:quartz_block\n" ..
+			                                                                          "minecraft:chest\n" ..
+			                                                                          "minecraft:diamond_pickaxe\n" ..
+			                                                                          "minecraft:stone_pickaxe\n" ..
+			                                                                          "minecraft:iron_pickaxe\n" ..
+			                                                                          "minecraft:log\n" ..
+			                                                                          "minecraft:planks\n" ..
+			                                                                          "minecraft:stick\n" ..
+			                                                                          "EnderStorage:enderChest\n" ..
+			                                                                          "simpleores:copper_ore\n" ..
+			                                                                          "simpleores:tin_ore\n" ..
+			                                                                          "simpleores:mythril_ore\n" ..
+			                                                                          "simpleores:adamantium_ore\n" ..
+			                                                                          "simpleores:onyx_ore\n" ..
+			                                                                          "IC2:blockOreCopper\n" ..
+			                                                                          "IC2:blockOreTin\n" ..
+			                                                                          "IC2:blockOreUran\n" ..
+			                                                                          "IC2:blockOreLead\n" ..
+			                                                                          "minechem:tile.oreUranium\n" ..
+			                                                                          "qCraft:quantumore\n" ..
+			                                                                          "qCraft:quantumoreglowing\n" ..
+			                                                                          "tc:oreTC\n" ..
+			                                                                          "ProjRed|Exploration:projectred.exploration.ore\n" ..
+                                                                                      "ProjRed|Core:projectred.core.part\n" ..
+			                                                                          "minecraft:redstone\n" ..
+			                                                                          "minecraft:coal_ore\n" ..
+			                                                                          "minecraft:coal\n" ..
+			                                                                          "ThermalFoundation:Ore\n" ..
+			                                                                          "minecraft:redstone_ore\n" ..
+			                                                                          "qCraft:dust\n" ..
+			                                                                          "BigReactors:YelloriteOre\n" ..
+			                                                                          "tc:oreTC\nThermalFoundation:Ore\n" ..
+			                                                                          "SGCraft:naquadahOre\n" ..
+                                                                                      "SGCraft:naquadah\n" ..
+                                                                                      "TConstruct:SearedBrick\n") then
 		return false
 	end
-	if not file_exists(stockpile_filename) and not write_default_config(stockpile_filename, "minecraft:diamond_ore\nminecraft:iron_ore\nminecraft:gold_ore\nminecraft:emerald_ore\nminecraft:lapis_ore\nminecraft:dye\nminecraft:iron_ingot\nminecraft:emerald\nminecraft:diamond\nminecraft:diamond_block\nminecraft:coal_block\nminecraft:lapis_block\nminecraft:redstone_block\nminecraft:glowstone\nminecraft:quartz_ore\nminecraft:quartz_block\n") then
+	if not file_exists(stockpile_filename) and not write_default_config(stockpile_filename, 
+                                                                        "minecraft:diamond_ore\n" ..
+                                                                        "minecraft:iron_ore\n" ..
+                                                                        "minecraft:gold_ore\n" ..
+                                                                        "minecraft:emerald_ore\n" ..
+                                                                        "minecraft:lapis_ore\n" ..
+                                                                        "minecraft:dye\n" ..
+                                                                        "minecraft:iron_ingot\n" ..
+                                                                        "minecraft:emerald\n" ..
+                                                                        "minecraft:diamond\n" ..
+                                                                        "minecraft:diamond_block\n" ..
+                                                                        "minecraft:coal_block\n" ..
+                                                                        "minecraft:lapis_block\n" ..
+                                                                        "minecraft:redstone_block\n" ..
+                                                                        "minecraft:glowstone\n" ..
+                                                                        "minecraft:quartz_ore\n" ..
+                                                                        "minecraft:quartz_block\n") then
 		return false
 	end
 	minerals = load_config(config_filename)
@@ -306,26 +373,23 @@ function check_fuel()
 	local cleaned
 
 	cleaned = false
-	if component.generator.count() >= 16 and computer.energy() >= 10000 then
+	if component.generator.count() >= 16 and computer.energy() >= 25000 then
 		return true
 	end
 	while not select_empty_case() do
 		clean_inventory()
 		cleaned = true
 	end
-	component.generator.remove()
-	data = component.inventory_controller.getStackInInternalSlot()
-	if not cleaned then
-		clean_inventory()
-	elseif data then
-		repack_item(data.name, data.meta)
+	if component.generator.count() <= 0 then
+		select_fuel()
 	end
-	select_fuel()
 	component.generator.insert()
-	if computer.energy() < 10000 then
-		print("Need generating fuel before continue. Waiting 1 minute.")
-		os.sleep(60)
-		return check_fuel()
+	while computer.energy() < 40000 do
+		print("Need generating fuel before continue. Waiting 10 secs.")
+		os.sleep(10)
+		if component.generator.count() <= 0 then
+			return check_fuel()
+		end
 	end
 	return true
 end
@@ -499,7 +563,7 @@ function extract_filon(direction)
 		end
 		robot.turnLeft()
 		robot.turnLeft()
-		elseif direction == side.left then
+	elseif direction == side.left then
 		robot.turnLeft()
 		while not robot.forward() do
 			smart_swing()
@@ -511,7 +575,7 @@ function extract_filon(direction)
 			smart_swing()
 		end
 		robot.turnLeft()
-		elseif direction == side.right then
+	elseif direction == side.right then
 		robot.turnRight()
 		while not robot.forward() do
 			smart_swing()
@@ -523,7 +587,7 @@ function extract_filon(direction)
 			smart_swing()
 		end
 		robot.turnRight()
-		elseif direction == side.up then
+	elseif direction == side.up then
 		while not robot.up() do
 			smart_swingUp()
 		end
@@ -531,7 +595,7 @@ function extract_filon(direction)
 		while not robot.down() do
 			smart_swingDown()
 		end
-		elseif direction == side.down then
+	elseif direction == side.down then
 		while not robot.down() do
 			smart_swingDown()
 		end
@@ -539,7 +603,7 @@ function extract_filon(direction)
 		while not robot.up() do
 			smart_swingUp()
 		end
-		elseif direction == side.back then
+	elseif direction == side.back then
 		robot.turnLeft()
 		robot.turnLeft()
 		while not robot.forward() do
@@ -555,23 +619,23 @@ function extract_filon(direction)
 	check_and_extract()
 end
 function select_item(item, meta)
-    local slot = 1
+	local slot = 1
 	local size = robot.inventorySize()
 
 	errno = "unknown error"
-    while slot <= size do
-        local data = component.inventory_controller.getStackInInternalSlot(slot)
-        if data and data.name == item and (not meta or data.damage == meta) then
-            robot.select(slot)
-            return true
+	while slot <= size do
+		local data = component.inventory_controller.getStackInInternalSlot(slot)
+		if data and data.name == item and (not meta or data.damage == meta) then
+			robot.select(slot)
+			return true
 		end
-        slot = slot + 1
+		slot = slot + 1
 	end
 	errno = "Can't select: " .. item
 	if meta then
 		errno = errno .. " with metadata: "  .. meta
 	end
-    return false
+	return false
 end
 function select_next_item(slot, item, meta)
 	local data
@@ -751,14 +815,14 @@ end
 function turn(bool)
 	if bool then
 		robot.turnRight()
-		else
+	else
 		robot.turnLeft()
 	end
 end
 function xor_bool(bool)
 	if bool then
 		return false
-		else
+	else
 		return true
 	end
 end
@@ -884,14 +948,14 @@ function pickaxe_materials()
 			if stick >= 2 then
 				wood = true
 			end
-			elseif data and not material and (data.name == "minecraft:cobblestone" or data.name == "minecraft:iron_ingot") and data.size >= 3 then
+		elseif data and not material and (data.name == "minecraft:cobblestone" or data.name == "minecraft:iron_ingot") and data.size >= 3 then
 			material = true
 		end
 		slot = slot + 1
 	end
 	if material and not wood then
 		return craft_sticks()
-		elseif wood and material then
+	elseif wood and material then
 		return true
 	end
 	return false
@@ -902,10 +966,10 @@ function empty_cases_amount()
 	local size = robot.inventorySize()
 
 	while slot <= size do
-        if not component.inventory_controller.getStackInInternalSlot(slot) then
+		if not component.inventory_controller.getStackInInternalSlot(slot) then
 			empty_slots = empty_slots + 1
 		end
-        slot = slot + 1
+		slot = slot + 1
 	end
 	return empty_slots
 end
@@ -913,11 +977,11 @@ function select_empty_case()
 	local slot = 1
 
 	while slot <= robot.inventorySize() do
-        if not component.inventory_controller.getStackInInternalSlot(slot) then
+		if not component.inventory_controller.getStackInInternalSlot(slot) then
 			robot.select(slot)
 			return true
 		end
-        slot = slot + 1
+		slot = slot + 1
 	end
 	return false
 end
@@ -992,18 +1056,18 @@ function compact_item(bloc_size, item, meta)
 	end
 end
 function item_amount(item, meta)
-    local slot = 1
+	local slot = 1
 	local size = robot.inventorySize()
 	local amount = 0
 
-    while slot <= size do
-        local data = component.inventory_controller.getStackInInternalSlot(slot)
-        if data and data.name == item and (not meta or data.damage == meta) then
+	while slot <= size do
+		local data = component.inventory_controller.getStackInInternalSlot(slot)
+		if data and data.name == item and (not meta or data.damage == meta) then
 			amount = amount + data.size
 		end
-        slot = slot + 1
+		slot = slot + 1
 	end
-    return amount
+	return amount
 end
 function stock_minerals()
 	local slot = 1
@@ -1125,7 +1189,7 @@ if amount > 1 then
 	if direction ~= "left" and direction ~= "right" then
 		error("Unknown direction: " .. direction)
 	end
-	else
+else
 	direction = "right"
 end
 
