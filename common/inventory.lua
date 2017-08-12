@@ -47,30 +47,15 @@ local function equip(item, meta)
 	if item then
 		success = select_item(item, meta)
 	end
-	component.inventory_controller.equip()
+	if success then
+		return component.inventory_controller.equip()
+	end
 	return success
 end
 inventory.equip = equip
 
-local function select_free_slot()
-	local slot
-	local data
-
-	slot = robot.inventorySize()
-	while slot >= 1 do
-		data = component.inventory_controller.getStackInInternalSlot(slot)
-		if not data then
-			robot.select(slot)
-			return true
-		end
-		slot = slot - 1
-	end
-	return false
-end
-inventory.select_free_slot = select_free_slot
-
 local function unequip()
-	if not select_free_slot() then
+	if not select_empty_slot() then
 		return false
 	end
 	component.inventory_controller.equip()
@@ -80,10 +65,12 @@ inventory.unequip = unequip
 
 local function select_next_item(slot, item, meta)
 	local data
-	local size = robot.inventorySize()
+	local size
 
-	while slot <= robot.inventorySize() do
+	size = robot.inventorySize()
+	while slot <= size do
 		data = component.inventory_controller.getStackInInternalSlot(slot)
+
 		if data and data.name == item and (not meta or meta == data.damage) then
 			robot.select(slot)
 			return true
@@ -119,10 +106,18 @@ end
 inventory.repack_item = repack_item
 
 local function push_item_after_slot(from)
-	local slot = from + 1
+	local slot
+	local data
+	local tmp
 
+	slot = from + 1
+	data = component.inventory_controller.getStackInInternalSlot(from)
 	robot.select(from)
-	while slot < robot.inventorySize() and component.inventory_controller.getStackInInternalSlot(slot) do
+	while slot < robot.inventorySize() do
+		tmp = component.inventory_controller.getStackInInternalSlot(slot)
+		if not tmp or (tmp.name == data.name and tmp.damage == data.damage and tmp.size < tmp.maxSize) then
+			break
+		end
 		slot = slot + 1
 	end
 	if slot < robot.inventorySize() and robot.transferTo(slot) then
@@ -133,30 +128,53 @@ end
 inventory.push_item_after_slot = push_item_after_slot
 
 local function free_slots_amount()
-	local slot = 1
-	local empty_slots = 0
-	local size = robot.inventorySize()
+	local slot
+	local empty_slots
+	local size
 
+	slot = 1
+	empty_slots = 0
+	size = robot.inventorySize()
 	while slot <= size do
-        if not component.inventory_controller.getStackInInternalSlot(slot) then
+		if not component.inventory_controller.getStackInInternalSlot(slot) then
 			empty_slots = empty_slots + 1
 		end
-        slot = slot + 1
+		slot = slot + 1
 	end
 	return empty_slots
 end
 inventory.free_slots_amount = free_slots_amount
 
-local function select_item_out_of_workbench(item, meta)
-	local slot = 4
-	local data
-	local size = robot.inventorySize()
+local function select_empty_slot()
+	local slot
+	local size
 
+	size = robot.inventorySize()
+	slot = 1
+	while slot <= size do
+		if not component.inventory_controller.getStackInInternalSlot(slot) then
+			robot.select(slot)
+			return slot
+		end
+		slot = slot + 1
+	end
+	return false
+end
+inventory.select_empty_slot = select_empty_slot
+
+local function select_item_out_of_workbench(item, meta)
+	local slot
+	local data
+	local size
+
+	slot = 4
+	size = robot.inventorySize()
 	while slot <= size do
 		if slot == 5 or slot == 9 then
 			slot = slot + 3
 		end
 		data = component.inventory_controller.getStackInInternalSlot(slot)
+
 		if data and data.name == item and (not meta or data.damage == meta) then
 			robot.select(slot)
 			return true
@@ -168,19 +186,47 @@ end
 inventory.select_item_out_of_workbench = select_item_out_of_workbench
 
 local function item_amount(item, meta)
-    local slot = 1
-	local size = robot.inventorySize()
-	local amount = 0
+	local data
+	local slot
+	local size
+	local amount
 
-    while slot <= size do
-        local data = component.inventory_controller.getStackInInternalSlot(slot)
-        if data and data.name == item and (not meta or data.damage == meta) then
+	slot = 1
+	size = robot.inventorySize()
+	amount = 0
+	while slot <= size do
+		data = component.inventory_controller.getStackInInternalSlot(slot)
+
+		if data and data.name == item and (not meta or data.damage == meta) then
 			amount = amount + data.size
 		end
-        slot = slot + 1
+		slot = slot + 1
 	end
-    return amount
+	return amount
 end
 inventory.item_amount = item_amount
+
+--[[
+----	purpose: Tell if there is at least one empty slot in robot (regardless of unfilled stacks).
+----
+----	return: true		robot have no empty slot
+----			false		robot have at least one empty slot
+--]]
+local function is_full()
+	local slot
+	local data
+
+	slot = robot.inventorySize()
+	while slot > 0 do
+		data = component.inventory_controller.getStackInInternalSlot(slot)
+
+		if not data then
+			return false
+		end
+		slot = slot - 1
+	end
+	return true
+end
+inventory.is_full = is_full
 
 return inventory

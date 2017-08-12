@@ -12,7 +12,7 @@ local chest = {}
 ----  	params: name, 		requiered, 	name of item that must be suck, string. eg: 'minecraft:dirt'
 ----			meta, 		optional, 	metadata of the item, number. If no metadata provided then all are matching.
 ----			amount, 	optional, 	maximum amount of items to suck, number beteween 1 and 64.
-----			chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----			chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----
 ----	return: true		if at least one item was get from chest
 ----			false		if nothing moved
@@ -33,13 +33,9 @@ local function get_item_from_chest(name, meta, amount, chest_side)
 	end
 	while slot <= size do
 		data = component.inventory_controller.getStackInSlot(chest_side, slot)
+
 		if data and data.name == name and (not meta or data.damage == meta) then
-			if amount then
-				component.inventory_controller.suckFromSlot(chest_side, slot, amount)
-			else
-				component.inventory_controller.suckFromSlot(chest_side, slot)
-			end
-			return true
+			return component.inventory_controller.suckFromSlot(chest_side, slot, amount)
 		end
 		slot = slot + 1
 	end
@@ -50,7 +46,7 @@ chest.get_item_from_chest = get_item_from_chest
 --[[
 ----	purpose: Get first empty slot in a chest
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----
 ----	return: slot:number	the firt empty slot
 ----			false		if no chest/inventory found or if chest have no empty slot.
@@ -83,7 +79,7 @@ chest.get_free_slot_in_chest = get_free_slot_in_chest
 --[[
 ----	purpose: Drop a robot slot in a chest in first(s) free emplacement(s) (empty or unfilled stack slot).
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----  			from_slot, 	requiered, 	slot of robot to be drop.
 ----			amount, 	optional, 	maximum amount of items to suck.
 ----
@@ -99,13 +95,13 @@ local function drop_slot_to_chest(chest_side, slot, amount)
 	if not chest_side then
 		chest_side = side.front
 	end
-	slot_chest = 1
-	data = component.inventory_controller.getStackInInternalSlot(slot)
 	inv_size = component.inventory_controller.getInventorySize(chest_side)
 	if not inv_size then
 		print('Warning: No inventory found')
 		return false
 	end
+	slot_chest = 1
+	data = component.inventory_controller.getStackInInternalSlot(slot)
 	robot.select(slot)
 	while robot.count(slot) > 0 do
 		data_chest = component.inventory_controller.getStackInSlot(chest_side, slot_chest)
@@ -124,7 +120,7 @@ chest.drop_slot_to_chest = drop_slot_to_chest
 --[[
 ----	purpose: Drop a robot slot to a chest slot
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----  			from_slot, 	requiered, 	slot of robot to be drop.
 ----			amount, 	optional, 	maximum amount of items to suck.
 ----			to_slot, 	optional, 	chest slot that will receive items. If no provided, then it will drop into the first empty/not fully stacked slot.
@@ -148,7 +144,7 @@ chest.drop_slot_to_chest_slot = drop_slot_to_chest_slot
 --[[
 ----	purpose: Drop all same item in a chest in first(s) free emplacement(s) (empty or unfilled stack slot).
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----  			from_slot, 	requiered, 	slot of robot to be drop.
 ----			amount, 	optional, 	maximum amount of items to suck.
 ----			to_slot, 	optional, 	chest slot that will receive items. If no provided, then it will drop into the first empty/not fully stacked slot.
@@ -156,7 +152,7 @@ chest.drop_slot_to_chest_slot = drop_slot_to_chest_slot
 ----	return: true		if at least one item was drop to chest
 ----			false		if nothing moved
 --]]
-local function drop_item_to_chest(item, meta, chest_side)
+local function drop_item_to_chest(item, meta, amount, chest_side)
 	local slot = 1
 	local size
 
@@ -169,7 +165,7 @@ local function drop_item_to_chest(item, meta, chest_side)
 
 		data = component.inventory_controller.getStackInInternalSlot(slot)
 		if data and data.name == item and (not meta or data.damage == meta) then
-			if not drop_slot_to_chest(chest_side, slot) then
+			if not drop_slot_to_chest(chest_side, slot, amount) then
 				return false
 			end
 		end
@@ -182,7 +178,7 @@ chest.drop_item_to_chest = drop_item_to_chest
 --[[
 ----	purpose: Tell if there is at least one empty slot in a chest (regardless of unfilled stacks).
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----
 ----	return: true		chest have no empty slot
 ----			false		chest have at least one empty slot
@@ -210,11 +206,46 @@ local function is_full(chest_side)
 end
 chest.is_full = is_full
 
+--[[
+----	purpose: Return number of matching item in chest.
+----
+----  	params: item, 		requiered, 	name of item that must be suck, string. eg: 'minecraft:dirt'
+----			meta, 		optional, 	metadata of the item, number. If no metadata provided then all are matching.
+----			chest_side	optional,  where is the chest compared to the robot, number. eg 'side.left'. Default is 'side.front'
+----
+----	return: amount:number	amount of matching item
+----			false			no valid inventory found at side
+--]]
+local function get_item_amount(chest_side, item, meta)
+	local slot
+	local data
+	local amount
+
+	amount = 0
+	if not chest_side then
+		chest_side = side.front
+	end
+	slot = component.inventory_controller.getInventorySize(chest_side)
+	if not slot then
+		print("Warning: No chest found")
+		return false
+	end
+	while slot > 0 do
+		data = component.inventory_controller.getStackInSlot(chest_side, slot)
+		if data and data.name == item and (not meta or data.damage == meta) then
+			amount = amount + data.size
+		end
+		slot = slot - 1
+	end
+	return amount
+end
+chest.get_item_amount = get_item_amount
+
 
 --[[
 ----	purpose: Get last slot occuped by provided item in chest
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----			item, 		requiered, 	name of item that must be suck, string. eg: 'minecraft:dirt'
 ----			meta, 		requiered, 	metadata of the item, number. If no metadata provided then all are matching.
 ----			max, 		optional, 	maximum slot to begin research (optimisation stuff). If no maximum provided, using the inventory size instead.
@@ -251,7 +282,7 @@ chest.select_last_item = select_last_item
 --[[
 ----	purpose: Stack all unfiled stacks of matching item
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----			item, 		requiered, 	name of item that must be suck, string. eg: 'minecraft:dirt'
 ----			meta, 		requiered, 	metadata of the item, number. If no metadata provided then all are matching.
 ----			from_slot, 	optional, 	minimum slot to begin research (optimisation stuff). If no minimum provided, using the first inventory slot.
@@ -296,7 +327,7 @@ chest.repack_item = repack_item
 --[[
 ----	purpose: Stack all unfiled stacks in chest (can be long, especialy with a huge inventory, due to chest parsing)
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the turtle, number. eg 'side.left'
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----
 ----	return: true		if succeed
 ----			false		if no chest/inventory found or if robot don't have an empty slot to swap.

@@ -27,6 +27,9 @@ paste[#paste + 1] = {}
 paste[#paste]['id'] = 'bvgVf19y'
 paste[#paste]['name'] = 'chest.lua'
 
+paste[#paste + 1] = {}
+paste[#paste]['id'] = '3KBrih6H'
+paste[#paste]['name'] = 'crafting.lua'
 
 function download_all_pastes()
     local i

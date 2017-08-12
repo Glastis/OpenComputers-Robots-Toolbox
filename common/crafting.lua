@@ -6,16 +6,12 @@ local inventory = require('inventory')
 local crafting = {}
 
 local function free_crafting_table()
-	local slot = 1
-	local data
-	local tried = false
+	local slot
 
+	slot = 1
 	while slot <= 11 do
 		if slot ~= 4 and slot ~= 8 then
-			if component.inventory_controller.getStackInInternalSlot(slot) and not inventory.push_item_after_slot(slot) and not tried then
-				inventory.clean_inventory()
-				tried = true
-			elseif component.inventory_controller.getStackInInternalSlot(slot) and not inventory.push_item_after_slot(slot) then
+			if component.inventory_controller.getStackInInternalSlot(slot) and not inventory.push_item_after_slot(slot) then
 				return false
 			end
 		end
@@ -24,6 +20,25 @@ local function free_crafting_table()
 	return true
 end
 crafting.free_crafting_table = free_crafting_table
+
+local function move_item_out_of_crafting_table(item, meta)
+	local slot
+	local data
+
+	slot = 1
+	while slot <= 11 do
+		if slot ~= 4 and slot ~= 8 then
+			data = component.inventory_controller.getStackInInternalSlot(slot)
+
+			if data and data.name == item and (not meta or data.damage == meta) and not inventory.push_item_after_slot(slot) then
+				return false
+			end
+		end
+		slot = slot + 1
+	end
+	return true
+end
+crafting.move_item_out_of_crafting_table = move_item_out_of_crafting_table
 
 local function place_item_for_craft(item, to, meta)
 	local craft = {}

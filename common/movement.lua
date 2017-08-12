@@ -18,7 +18,7 @@ local function forward(amount, force)
 			os.sleep(0.5)
 		else
 			os.sleep(2)
-			print("Can't forward. Please move this shit.")
+			print("Can't forward.")
 		end
 	end
 end
@@ -36,7 +36,7 @@ local function up(amount, force)
       os.sleep(0.5)
 		else
 			os.sleep(2)
-			print("Can't go up. Please move this shit.")
+			print("Can't go up.")
 		end
 	end
 end
@@ -54,7 +54,7 @@ local function down(amount, force)
       os.sleep(0.5)
 		else
 			os.sleep(2)
-			print("Can't go down. Please move this shit.")
+			print("Can't go down.")
 		end
 	end
 end
