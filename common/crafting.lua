@@ -11,7 +11,7 @@ local function free_crafting_table()
 	slot = 1
 	while slot <= 11 do
 		if slot ~= 4 and slot ~= 8 then
-			if component.inventory_controller.getStackInInternalSlot(slot) and not inventory.push_item_after_slot(slot) then
+			if component.inventory_controller.getStackInInternalSlot(slot) and not inventory.push_item_after_slot(slot, true) then
 				return false
 			end
 		end
@@ -30,7 +30,7 @@ local function move_item_out_of_crafting_table(item, meta)
 		if slot ~= 4 and slot ~= 8 then
 			data = component.inventory_controller.getStackInInternalSlot(slot)
 
-			if data and data.name == item and (not meta or data.damage == meta) and not inventory.push_item_after_slot(slot) then
+			if data and data.name == item and (not meta or data.damage == meta) and not inventory.push_item_after_slot(slot, true) then
 				return false
 			end
 		end
@@ -40,9 +40,12 @@ local function move_item_out_of_crafting_table(item, meta)
 end
 crafting.move_item_out_of_crafting_table = move_item_out_of_crafting_table
 
-local function place_item_for_craft(item, to, meta)
+local function place_item_for_craft(item, to, meta, amount)
 	local craft = {}
 
+	if not amount then
+		amount = 1
+	end
 	craft[1] = 1
 	craft[2] = 2
 	craft[3] = 3
@@ -56,7 +59,7 @@ local function place_item_for_craft(item, to, meta)
 		print("ERROR: place_item_for_craft: slot can't be > than 9")
 		os.exit()
 	end
-	if inventory.select_item_out_of_workbench(item, meta) and robot.transferTo(craft[to], 1) then
+	if inventory.select_item_out_of_workbench(item, meta) and robot.transferTo(craft[to], amount) then
 		return true
 	end
 	return false
@@ -113,4 +116,5 @@ local function compact_all_items_blocs()
 end
 crafting.compact_all_items_blocs = compact_all_items_blocs
 
+crafting.craft = component.crafting.craft
 return crafting

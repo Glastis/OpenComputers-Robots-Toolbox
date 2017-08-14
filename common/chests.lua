@@ -4,6 +4,7 @@ local component = require("component")
 
 local utility = require('utilities')
 local inventory = require('inventory')
+local move = require('movement')
 local chest = {}
 
 --[[
@@ -21,24 +22,33 @@ local function get_item_from_chest(name, meta, amount, chest_side)
 	local slot
 	local data
 	local size
+	local retval
+	local new_side
 
 	slot = 1
-	if not chest_side then
-		chest_side = side.front
+	if chest_side and (chest_side == side.up or chest_side == side.down) then
+		new_side = chest_side
+	else
+		new_side = side.front
 	end
-	size = component.inventory_controller.getInventorySize(chest_side)
+	move.move_orientation(chest_side)
+	size = component.inventory_controller.getInventorySize(new_side)
 	if not size then
 		print('Warning: No inventory found')
+		move.move_orientation_revert(chest_side)
 		return false
 	end
 	while slot <= size do
-		data = component.inventory_controller.getStackInSlot(chest_side, slot)
+		data = component.inventory_controller.getStackInSlot(new_side, slot)
 
 		if data and data.name == name and (not meta or data.damage == meta) then
-			return component.inventory_controller.suckFromSlot(chest_side, slot, amount)
+			retval = component.inventory_controller.suckFromSlot(new_side, slot, amount)
+			move.move_orientation_revert(chest_side)
+			return retval
 		end
 		slot = slot + 1
 	end
+	move.move_orientation_revert(chest_side)
 	return false
 end
 chest.get_item_from_chest = get_item_from_chest
@@ -91,28 +101,35 @@ local function drop_slot_to_chest(chest_side, slot, amount)
 	local slot_chest
 	local inv_size
 	local data_chest
+	local new_side
 
-	if not chest_side then
-		chest_side = side.front
+	if not chest_side or (chest_side ~= side.up and chest_side ~= side.down) then
+		new_side = side.front
+	else
+		new_side = chest_side
 	end
-	inv_size = component.inventory_controller.getInventorySize(chest_side)
+	move.move_orientation(chest_side)
+	inv_size = component.inventory_controller.getInventorySize(new_side)
 	if not inv_size then
 		print('Warning: No inventory found')
+		move.move_orientation_revert(chest_side)
 		return false
 	end
 	slot_chest = 1
 	data = component.inventory_controller.getStackInInternalSlot(slot)
 	robot.select(slot)
 	while robot.count(slot) > 0 do
-		data_chest = component.inventory_controller.getStackInSlot(chest_side, slot_chest)
+		data_chest = component.inventory_controller.getStackInSlot(new_side, slot_chest)
 		if not data_chest or (data_chest.name == data.name and data_chest.damage == data.damage) then
-			component.inventory_controller.dropIntoSlot(chest_side, slot_chest, amount)
+			component.inventory_controller.dropIntoSlot(new_side, slot_chest, amount)
 		end
 		slot_chest = slot_chest + 1
 		if slot_chest > inv_size then
+			move.move_orientation_revert(chest_side)
 			return false
 		end
 	end
+	move.move_orientation_revert(chest_side)
 	return robot.count(slot) == 0
 end
 chest.drop_slot_to_chest = drop_slot_to_chest
@@ -164,6 +181,7 @@ local function drop_item_to_chest(item, meta, amount, chest_side)
 		local data
 
 		data = component.inventory_controller.getStackInInternalSlot(slot)
+
 		if data and data.name == item and (not meta or data.damage == meta) then
 			if not drop_slot_to_chest(chest_side, slot, amount) then
 				return false
@@ -306,7 +324,7 @@ local function repack_item(chest_side, item, meta, from_slot)
 		print("Warning: No chest found")
 		return false
 	end
-	if not inventory.select_free_slot() then
+	if not inventory.select_empty_slot() then
 		return false
 	end
 	slot = select_last_item(chest_side, item, meta)

@@ -105,7 +105,7 @@ local function repack_item(item, meta)
 end
 inventory.repack_item = repack_item
 
-local function push_item_after_slot(from)
+local function push_item_after_slot(from, craft_mode)
 	local slot
 	local data
 	local tmp
@@ -114,14 +114,24 @@ local function push_item_after_slot(from)
 	data = component.inventory_controller.getStackInInternalSlot(from)
 	robot.select(from)
 	while slot < robot.inventorySize() do
+		while craft_mode and ((slot >= 1 and slot <= 3) or (slot >= 5 and slot <= 7) or (slot >= 9 and slot <= 11)) do
+			slot = slot + 1
+		end
 		tmp = component.inventory_controller.getStackInInternalSlot(slot)
+
 		if not tmp or (tmp.name == data.name and tmp.damage == data.damage and tmp.size < tmp.maxSize) then
 			break
 		end
 		slot = slot + 1
 	end
 	if slot < robot.inventorySize() and robot.transferTo(slot) then
-		return true
+		tmp = component.inventory_controller.getStackInInternalSlot(from)
+
+		if tmp then
+			return push_item_after_slot(from, craft_mode)
+		else
+			return true
+		end
 	end
 	return false
 end

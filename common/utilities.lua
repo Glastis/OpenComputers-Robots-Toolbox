@@ -41,7 +41,7 @@ local function is_elem_in_list(list, elem)
 	i = 1
 	while i <= #list do
 		if list[i] == elem then
-			return true
+			return i
 		end
 		i = i + 1
 	end

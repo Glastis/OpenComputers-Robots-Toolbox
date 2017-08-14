@@ -17,8 +17,8 @@ local FIELD_Y_SIZE = 9
 local FIELD_DIRECTION = 'right'
 local MAIN_LOOP_MINUTES_SLEEP = 2
 local MAIN_LOOP_SECONDS_SLEEP = MAIN_LOOP_MINUTES_SLEEP * 60
-local SALT_PRODUCTION_STACK_AMOUNT = 2
-local WATER_PRODUCTION_STACK_AMOUNT = 2
+local SALT_PRODUCTION_STACK_AMOUNT = 1
+local WATER_PRODUCTION_STACK_AMOUNT = 1
 local args = {... }
 
 local CHEST_MAP = {}
@@ -28,6 +28,11 @@ local need_list = {}
 -- Will be harverst one time every FREQUENCY loop.
 local FREQUENCY_CHEST_DROP = 5
 local FREQUENCY_APPLE = 10
+local FREQUENCY_BREAD = 10
+local FREQUENCY_TOAST = 10
+local FREQUENCY_MILK_TOFU = 10
+local FREQUENCY_SILKEN_TOFU = 11
+local FREQUENCY_HAMBURGER = 20
 
 local last_field
 
@@ -47,6 +52,9 @@ function init()
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = "harvestcraft:firmtofuItem"
     tmp[#tmp][side.down] = "minecraft:wheat_seeds"
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = nil
+    tmp[#tmp][side.down] = "harvestcraft:hamburgerItem"
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     tmp = {}
@@ -58,6 +66,10 @@ function init()
     tmp[#tmp][side.down] = "minecraft:apple"
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.down] = "harvestcraft:tomatoItem"
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.down] = "harvestcraft:bread"
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.down] = "harvestcraft:toastItem"
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:lettuceItem"
@@ -84,7 +96,36 @@ function harvest_apples()
     move.move(4, side.right)
     move.move(5, side.back)
     robot.useUp()
+    move.move(4, side.back)
+    move.move(3, side.right)
+    move.move(1, side.back)
+    robot.useUp()
+    move.move(1, side.front)
+    move.move(1, side.right)
+    move.move(1, side.up)
+    robot.useUp()
+    move.move(1, side.down)
+    move.move(4, side.left)
     move.move(2, side.back)
+    move.move(1, side.right)
+    robot.useUp()
+    move.move(1, side.back)
+    move.move(1, side.right)
+    robot.useUp()
+    move.move(6, side.left)
+    move.move(1, side.back)
+    move.move(1, side.up)
+    robot.useUp()
+    move.move(1, side.left)
+    move.move(2, side.front)
+    robot.useUp()
+    move.move(2, side.front)
+    robot.useUp()
+    move.move(2, side.right)
+    robot.useUp()
+    move.move(1, side.down)
+    move.move(3, side.right)
+    move.move(2, side.front)
     move.move(4, side.right)
     robot.useUp()
     move.move(2, side.front)
@@ -109,6 +150,121 @@ function harvest_apples()
 end
 
 --[[
+----    APPLES PRODUCTION
+--]]
+
+function make_hamburger()
+    if not utilitie.is_elem_in_list(need_list, 'harvestcraft:hamburgerItem') or not get_item('harvestcraft:toastItem') or not get_item('harvestcraft:firmtofuItem') then
+        return false
+    end
+    if not chest.get_item_from_chest('harvestcraft:skilletItem', nil, nil, side.down) then
+        print('Warning: Skillet not found')
+        return false
+    end
+    crafting.free_crafting_table()
+    if not crafting.place_item_for_craft('harvestcraft:skilletItem', 1) then
+        return false
+    end
+    while crafting.place_item_for_craft('harvestcraft:toastItem', 4, nil, 1) and crafting.place_item_for_craft('harvestcraft:firmtofuItem', 2, nil, 1) and crafting.craft() do
+        crafting.move_item_out_of_crafting_table('harvestcraft:hamburgerItem')
+    end
+end
+
+--[[
+----    TOFU AND MILK PRODUCTION
+--]]
+
+function go_base_to_press()
+    move.move(3, side.up)
+    move.move(2, side.back)
+end
+
+function go_press_to_base()
+    move.move(2, side.front)
+    move.move(3, side.down)
+end
+
+function get_finished_milk_and_tofu()
+    move.move(1, side.back)
+    chest.get_item_from_chest('harvestcraft:soymilkItem', nil, nil, side.back)
+    chest.get_item_from_chest('harvestcraft:firmtofuItem', nil, nil, side.back)
+    move.move(1, side.front)
+end
+
+function get_finished_silken_tofu()
+    move.move(1, side.back)
+    chest.get_item_from_chest('harvestcraft:silkentofuItem', nil, nil, side.back)
+    move.move(1, side.front)
+end
+
+function make_milk_and_tofu()
+    if (not utilitie.is_elem_in_list(need_list, 'harvestcraft:soymilkItem') and not utilitie.is_elem_in_list(need_list, 'harvestcraft:firmtofuItem')) or not get_item('harvestcraft:silkentofuItem') then
+        return false
+    end
+    go_base_to_press()
+    chest.drop_item_to_chest('harvestcraft:silkentofuItem', nil, nil, side.left)
+    go_press_to_base()
+    get_finished_milk_and_tofu()
+end
+
+function make_silken_tofu()
+    if not utilitie.is_elem_in_list(need_list, 'harvestcraft:silkentofuItem') or not get_item('harvestcraft:soybeanItem') then
+        return false
+    end
+    go_base_to_press()
+    chest.drop_item_to_chest('harvestcraft:soybeanItem', nil, nil, side.left)
+    go_press_to_base()
+    get_finished_silken_tofu()
+end
+
+--[[
+----    BREAD AND TOAST PRODUCTION
+--]]
+
+function craft_bread()
+    crafting.free_crafting_table()
+    while crafting.place_item_for_craft('minecraft:wheat', 1) and crafting.place_item_for_craft('minecraft:wheat', 2) and crafting.place_item_for_craft('minecraft:wheat', 3) do
+        crafting.craft()
+        crafting.free_crafting_table()
+    end
+end
+
+function make_bread()
+    if not utilitie.is_elem_in_list(need_list, 'minecraft:bread') or not get_item('minecraft:wheat') then
+        return false
+    end
+    craft_bread()
+end
+
+function go_toast_furnace_from_base()
+    move.move(3, side.up)
+    move.move(3, side.back)
+end
+
+function go_base_from_toast_furnace()
+    move.move(3, side.front)
+    move.move(3, side.down)
+end
+
+function get_finished_toasts()
+    move.move(1, side.up)
+    move.move(3, side.back)
+    chest.get_item_from_chest('harvestcraft:toastItem', nil, nil, side.down)
+    move.move(3, side.front)
+    move.move(1, side.down)
+end
+
+function make_toast()
+    if not utilitie.is_elem_in_list(need_list, 'harvestcraft:toastItem') or not get_item('minecraft:bread') then
+        return false
+    end
+    go_toast_furnace_from_base()
+    chest.drop_item_to_chest('minecraft:bread', nil, nil, side.left)
+    go_base_from_toast_furnace()
+    get_finished_toasts()
+end
+
+--[[
 ----    SALT AND WATER PRODUCTION
 --]]
 
@@ -126,16 +282,6 @@ function go_salt_to_base()
     move.move(4, side.back)
 end
 
-function extract_water()
-    chest.get_item_from_chest('minecraft:bucket', false, false, side.up)
-    while environement.fill_bucket() do
-        if inventory.is_full() then
-            chest.drop_item_to_chest('minecraft:water_bucket', false, side.down)
-        end
-    end
-    chest.drop_item_to_chest('minecraft:water_bucket', false, side.down)
-end
-
 function draw_water(amount)
     if not chest.get_item_from_chest('minecraft:bucket', nil, nil, side.up) then
         print('Bucket not found, can\'t craft water.')
@@ -145,9 +291,10 @@ function draw_water(amount)
         amount = (robot.inventorySize() - 10) * 64
     end
     crafting.free_crafting_table()
+    crafting.place_item_for_craft('minecraft:bucket', 1)
     while amount > 0 do
         environement.fill_bucket(robot.front, true, true)
-        component.crafting.craft()
+        crafting.craft()
         crafting.move_item_out_of_crafting_table('harvestcraft:freshwaterItem')
         amount = amount - 1
     end
@@ -156,12 +303,12 @@ function draw_water(amount)
 end
 
 function craft_salt()
-    if not draw_water(SALT_PRODUCTION_STACK_AMOUNT * 64) or not chest.get_item_from_chest('harvestcraft:potItem', false, false, side.up) then
+    if not draw_water(SALT_PRODUCTION_STACK_AMOUNT * 64) or not chest.get_item_from_chest('harvestcraft:potItem', nil, nil, side.up) then
         return false
     end
     crafting.free_crafting_table()
     crafting.place_item_for_craft('harvestcraft:potItem', 1)
-    while crafting.place_item_for_craft('harvestcraft:freshwaterItem', 2) do
+    while crafting.place_item_for_craft('harvestcraft:freshwaterItem', 2, nil, 64) do
         component.crafting.craft()
         crafting.move_item_out_of_crafting_table('harvestcraft:saltItem')
     end
@@ -328,6 +475,84 @@ end
 ----    INVENTORY CONTROLL
 --]]
 
+function move_base_to_chest(line_i, chest_i)
+    move.move(1, side.up)
+    move.move(6, side.front)
+    move.move(2, side.left)
+    move.move(1, side.front)
+    move.move(2 * (line_i - 1), side.left)
+    move.move(chest_i - 1, side.front)
+end
+
+function move_chest_to_base(line_i, chest_i)
+    move.move(chest_i - 1, side.back)
+    move.move(2 * (line_i - 1), side.right)
+    move.move(1, side.back)
+    move.move(2, side.right)
+    move.move(6, side.back)
+    move.move(1, side.down)
+end
+
+function get_chest_side(column, item)
+    local side_i
+    
+    if column[side.up] and column[side.up] == item then
+        return side.up
+    elseif column[side.down] and column[side.down] == item then
+        return side.down
+    end
+    return false
+end
+
+function get_chest_in_line(line, item)
+    local chest_i
+    local side_i
+
+    chest_i = 1
+    while chest_i < #line do
+        side_i = get_chest_side(line[chest_i], item)
+        if side_i then
+            return chest_i, side_i
+        end
+        chest_i = chest_i + 1
+    end
+    return false
+end
+
+function get_chest(item)
+    local line_i
+    local chest_i
+    local side_i
+    local i
+
+    line_i = 1
+    while line_i <= #CHEST_MAP do
+        chest_i, side_i = get_chest_in_line(CHEST_MAP[line_i], item)
+        if chest_i and side_i then
+            return line_i, chest_i, side_i
+        end
+        line_i = line_i + 1
+    end
+    return false
+end
+
+function get_item(item)
+    local line_i
+    local chest_i
+    local side_i
+    local ret_val
+
+    line_i, chest_i, side_i = get_chest(item)
+    if not line_i then
+        return false
+    end
+    move_base_to_chest(line_i, chest_i, side_i)
+    chest.repack_chest(side_i)
+    ret_val = chest.get_item_from_chest(item, nil, nil, side_i)
+    move_chest_to_base(line_i, chest_i, side_i)
+    return ret_val
+end
+
 function inventory_controll_chest(item, chest_side, drop, repack, update_need)
     if drop then
         chest.drop_item_to_chest(item, nil, nil, chest_side)
@@ -339,7 +564,7 @@ function inventory_controll_chest(item, chest_side, drop, repack, update_need)
         if not utilitie.is_elem_in_list(need_list, item) and not chest.is_full(chest_side) then
             need_list[#need_list + 1] = item
         elseif utilitie.is_elem_in_list(need_list, item) and chest.is_full(chest_side) then
-           table.remove(need_list, item)
+           table.remove(need_list, utilitie.is_elem_in_list(need_list, item))
         end
     end
 end
@@ -404,17 +629,49 @@ function garbage_all()
     move.move(1, side.down)
 end
 
+--[[
+----    OTHER
+--]]
+
+function check_actions(frequency_iter)
+    if frequency_iter % FREQUENCY_CHEST_DROP == 0 then
+        energy.wait_charging()
+        inventory_controll(true, false, true)
+        print('Needed ressources: ' .. utilitie.var_dump(need_list))
+        garbage_all()
+    end
+    if frequency_iter % FREQUENCY_HAMBURGER == 0 then
+        energy.wait_charging()
+        make_hamburger()
+    end
+    if frequency_iter % FREQUENCY_SILKEN_TOFU == 0 then
+        energy.wait_charging()
+        make_silken_tofu()
+    end
+    if frequency_iter % FREQUENCY_MILK_TOFU == 0 then
+        energy.wait_charging()
+        make_milk_and_tofu()
+    end
+    if frequency_iter % FREQUENCY_BREAD == 0 then
+        energy.wait_charging()
+        make_bread()
+    end
+    if frequency_iter % FREQUENCY_TOAST == 0 then
+        energy.wait_charging()
+        make_toast()
+    end
+    if frequency_iter % FREQUENCY_APPLE == 0 then
+        energy.wait_charging()
+        harvest_apples()
+    end
+end
+
 function core()
     local frequency_iter
 
     frequency_iter = 0
     while true do
-        if frequency_iter % FREQUENCY_CHEST_DROP == 0 then
-            energy.wait_charging()
-            inventory_controll(true, false, true)
-            print('Needed ressources: ' .. utilitie.var_dump(need_list))
-            garbage_all()
-        end
+        check_actions(frequency_iter)
         energy.wait_charging()
         make_salt()
         inventory_controll(true, false, false)
@@ -425,10 +682,6 @@ function core()
         garbage_all()
         energy.wait_charging()
         harvest_next_field()
-        if frequency_iter % FREQUENCY_APPLE == 0 then
-            energy.wait_charging()
-            harvest_apples()
-        end
         os.sleep(MAIN_LOOP_SECONDS_SLEEP)
         frequency_iter = frequency_iter + 1
         if frequency_iter > 2000000000 then --in case of scipt running non-stop 63 years.
