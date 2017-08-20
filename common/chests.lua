@@ -87,7 +87,40 @@ end
 chest.get_free_slot_in_chest = get_free_slot_in_chest
 
 --[[
-----	purpose: Drop a robot slot in a chest in first(s) free emplacement(s) (empty or unfilled stack slot).
+----	purpose: Get amount of empty slot in a chest
+----
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
+----
+----	return: amount:number	the firt empty slot
+----			false			if no chest/inventory found or if chest have no empty slot.
+--]]
+local function get_empty_slot_amount(chest_side)
+	local slot
+	local data
+	local amount
+
+	amount = 0
+	if not chest_side then
+		chest_side = side.front
+	end
+	slot = component.inventory_controller.getInventorySize(chest_side)
+	if not slot then
+		print('Warning: No inventory found')
+		return false
+	end
+	while slot > 0 do
+		data = component.inventory_controller.getStackInSlot(chest_side, slot)
+		if not data then
+			amount = amount + 1
+		end
+		slot = slot - 1
+	end
+	return amount
+end
+chest.get_empty_slot_amount = get_empty_slot_amount
+
+--[[
+----	purpose: Drop a robot slot in a chest in first(s) free emplacement(s) (empty or unfilled stack slot). In case of robot.drop() don't properly do this.
 ----
 ----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----  			from_slot, 	requiered, 	slot of robot to be drop.
@@ -159,32 +192,75 @@ end
 chest.drop_slot_to_chest_slot = drop_slot_to_chest_slot
 
 --[[
+----	purpose: Similar to robot.drop() but can handle sides back, left and right
+----
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
+----			amount, 	optional, 	maximum amount of items to drop.
+----  	        slot	    optional,   slot to drop
+----
+----	return: true		if at least one item was drop to chest
+----			false		if nothing moved
+--]]
+local function drop(chest_side, amount, slot)
+    local new_side
+    local retval
+
+    if not chest_side or (chest_side ~= side.up and chest_side ~= side.down) then
+        new_side = side.front
+    else
+        new_side = chest_side
+    end
+    move.move_orientation(chest_side)
+    if not component.inventory_controller.getInventorySize(new_side) then
+        print('Warning: No inventory found')
+        move.move_orientation_revert(chest_side)
+        return false
+    end
+    if slot then
+        robot.select(slot)
+    end
+    if new_side == side.up then
+        retval = robot.dropUp(amount)
+    elseif new_side == side.down then
+        retval = robot.dropDown(amount)
+    else
+        retval = robot.drop(amount)
+    end
+    move.move_orientation_revert(chest_side)
+    return retval
+end
+chest.drop = drop
+
+--[[
 ----	purpose: Drop all same item in a chest in first(s) free emplacement(s) (empty or unfilled stack slot).
 ----
 ----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
 ----  			from_slot, 	requiered, 	slot of robot to be drop.
 ----			amount, 	optional, 	maximum amount of items to suck.
 ----			to_slot, 	optional, 	chest slot that will receive items. If no provided, then it will drop into the first empty/not fully stacked slot.
+----			search, 	optional, 	set to true to search in all inventory to try to pack with others items, in case of robot.drop() doesn't.
 ----
 ----	return: true		if at least one item was drop to chest
 ----			false		if nothing moved
 --]]
-local function drop_item_to_chest(item, meta, amount, chest_side)
+local function drop_item_to_chest(item, meta, amount, chest_side, search)
 	local slot = 1
 	local size
 
 	size = robot.inventorySize()
 	if not chest_side then
 		chest_side = side.front
-	end
+    end
 	while slot <= size do
 		local data
 
 		data = component.inventory_controller.getStackInInternalSlot(slot)
 
 		if data and data.name == item and (not meta or data.damage == meta) then
-			if not drop_slot_to_chest(chest_side, slot, amount) then
+			if search and not drop_slot_to_chest(chest_side, slot, amount) then
 				return false
+            elseif not search and not drop(chest_side, amount, slot) then
+                return false
 			end
 		end
 		slot = slot + 1
@@ -223,6 +299,37 @@ local function is_full(chest_side)
 	return true
 end
 chest.is_full = is_full
+
+--[[
+----	purpose: Tell if there is at least one occupied slot in a chest.
+----
+----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'.
+----
+----	return: true		chest have no occupied slot.
+----			false		chest have at least one occupied slot.
+--]]
+local function is_empty(chest_side)
+	local slot
+	local data
+
+	if not chest_side then
+		chest_side = side.front
+	end
+	slot = component.inventory_controller.getInventorySize(chest_side)
+	if not slot then
+		print("Warning: No chest found")
+		return true
+	end
+	while slot > 0 do
+		data = component.inventory_controller.getStackInSlot(chest_side, slot)
+		if data then
+			return false
+		end
+		slot = slot - 1
+	end
+	return true
+end
+chest.is_empty = is_empty
 
 --[[
 ----	purpose: Return number of matching item in chest.

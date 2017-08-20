@@ -21,22 +21,27 @@ local function free_crafting_table()
 end
 crafting.free_crafting_table = free_crafting_table
 
-local function move_item_out_of_crafting_table(item, meta)
+local function move_item_out_of_crafting_table(item, meta, search_from)
 	local slot
 	local data
+    local retslot
 
 	slot = 1
 	while slot <= 11 do
 		if slot ~= 4 and slot ~= 8 then
 			data = component.inventory_controller.getStackInInternalSlot(slot)
 
-			if data and data.name == item and (not meta or data.damage == meta) and not inventory.push_item_after_slot(slot, true) then
-				return false
+			if data and data.name == item and (not meta or data.damage == meta) then
+                retslot = inventory.push_item_after_slot(slot, true, search_from)
+
+                if not retslot then
+				    return false
+                end
 			end
 		end
 		slot = slot + 1
 	end
-	return true
+	return retslot
 end
 crafting.move_item_out_of_crafting_table = move_item_out_of_crafting_table
 
@@ -65,6 +70,25 @@ local function place_item_for_craft(item, to, meta, amount)
 	return false
 end
 crafting.place_item_for_craft = place_item_for_craft
+
+local function prepare_craft(patern)
+	local i
+	local retval
+
+	i = 1
+	free_crafting_table()
+	retval = true
+	while i <= 9 do
+		if retval and patern[i] and patern[i]['item'] then
+			retval = place_item_for_craft(patern[i]['item'], i, patern[i]['meta'], patern[i]['amount'])
+		elseif retval and patern[i] then
+			retval = place_item_for_craft(patern[i], i)
+		end
+		i = i + 1
+	end
+	return retval
+end
+crafting.prepare_craft = prepare_craft
 
 local function craft_bloc(bloc_size, item, meta)
 	if bloc_size == 9 then

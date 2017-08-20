@@ -1,8 +1,18 @@
 local robot = require("robot")
 local side = require("sides")
 
+local ROBOT_SLEEP_BETWEEN_MOVE_TRY = 2
+local ROBOT_SLEEP_BREAK_MOVE_TRY = 0.5
+
 local movement = {}
 
+--[[
+----	purpose: Move robot forward.
+----
+----  	params: amount		optional,	number, amount of blocs robot must move
+----			force		optional,	set to true if robot must break bloc if it don't success to move
+----
+--]]
 local function forward(amount, force)
 	local i
 
@@ -15,15 +25,26 @@ local function forward(amount, force)
 			i = i - 1
 		elseif force then
 			robot.swing()
-			os.sleep(0.5)
+            if robot.forward() then
+                i = i - 1
+            else
+			    os.sleep(ROBOT_SLEEP_BREAK_MOVE_TRY)
+            end
 		else
-			os.sleep(2)
+			os.sleep(ROBOT_SLEEP_BETWEEN_MOVE_TRY)
 			print("Can't forward.")
 		end
 	end
 end
 movement.forward = forward
 
+--[[
+----	purpose: Move robot up.
+----
+----  	params: amount		optional,	number, amount of blocs robot must move
+----			force		optional,	set to true if robot must break bloc if it don't success to move
+----
+--]]
 local function up(amount, force)
 	if not amount then
 		amount = 1
@@ -31,17 +52,28 @@ local function up(amount, force)
 	while amount > 0 do
 		if robot.up() then
 			amount = amount - 1
-    elseif force then
-      robot.swingUp()
-      os.sleep(0.5)
+		elseif force then
+			robot.swingUp()
+            if robot.up() then
+                amount = amount - 1
+            else
+                os.sleep(ROBOT_SLEEP_BREAK_MOVE_TRY)
+            end
 		else
-			os.sleep(2)
+			os.sleep(ROBOT_SLEEP_BETWEEN_MOVE_TRY)
 			print("Can't go up.")
 		end
 	end
 end
 movement.up = up
 
+--[[
+----	purpose: Move robot down.
+----
+----  	params: amount		optional,	number, amount of blocs robot must move
+----			force		optional,	set to true if robot must break bloc if it don't success to move
+----
+--]]
 local function down(amount, force)
 	if not amount then
 		amount = 1
@@ -49,11 +81,15 @@ local function down(amount, force)
 	while amount > 0 do
 		if robot.down() then
 			amount = amount - 1
-    elseif force then
-      robot.swingDown()
-      os.sleep(0.5)
+		elseif force then
+			robot.swingDown()
+            if robot.down() then
+                amount = amount - 1
+            else
+                os.sleep(ROBOT_SLEEP_BREAK_MOVE_TRY)
+            end
 		else
-			os.sleep(2)
+			os.sleep(ROBOT_SLEEP_BETWEEN_MOVE_TRY)
 			print("Can't go down.")
 		end
 	end
@@ -86,15 +122,15 @@ movement.move_orientation_revert = move_orientation_revert
 
 local function move(amount, orientation, force)
 	if orientation then
-		move_orientation(orientation)
-		if orientation == side.up then
-			up(amount, force)
-		elseif orientation == side.down then
-			down(amount, force)
-		else
+        if orientation == side.up then
+            up(amount, force)
+        elseif orientation == side.down then
+            down(amount, force)
+        else
+            move_orientation(orientation)
 			forward(amount, force)
+            move_orientation_revert(orientation)
 		end
-		move_orientation_revert(orientation)
 	else
 		forward(amount, force)
 	end

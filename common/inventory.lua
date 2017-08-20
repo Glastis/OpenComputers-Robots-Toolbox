@@ -105,12 +105,15 @@ local function repack_item(item, meta)
 end
 inventory.repack_item = repack_item
 
-local function push_item_after_slot(from, craft_mode)
+local function push_item_after_slot(from, craft_mode, min_slot)
 	local slot
 	local data
 	local tmp
 
 	slot = from + 1
+	if min_slot and min_slot > from + 1 then
+		slot = min_slot
+	end
 	data = component.inventory_controller.getStackInInternalSlot(from)
 	robot.select(from)
 	while slot < robot.inventorySize() do
@@ -130,7 +133,7 @@ local function push_item_after_slot(from, craft_mode)
 		if tmp then
 			return push_item_after_slot(from, craft_mode)
 		else
-			return true
+			return slot
 		end
 	end
 	return false
@@ -238,5 +241,10 @@ local function is_full()
 	return true
 end
 inventory.is_full = is_full
+
+local function get_size()
+	return robot.inventorySize()
+end
+inventory.get_size = get_size
 
 return inventory

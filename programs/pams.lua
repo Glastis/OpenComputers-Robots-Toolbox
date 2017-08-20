@@ -15,10 +15,11 @@ local SCRIPT_NAME = 'foody'
 local FIELD_X_SIZE = 9
 local FIELD_Y_SIZE = 9
 local FIELD_DIRECTION = 'right'
-local MAIN_LOOP_MINUTES_SLEEP = 2
-local MAIN_LOOP_SECONDS_SLEEP = MAIN_LOOP_MINUTES_SLEEP * 60
+local MAIN_LOOP_MINUTES_SLEEP = 0
+local MAIN_LOOP_SECONDS_SLEEP = (MAIN_LOOP_MINUTES_SLEEP * 60) + 30
 local SALT_PRODUCTION_STACK_AMOUNT = 1
 local WATER_PRODUCTION_STACK_AMOUNT = 1
+local MIN_SLOTS_EMPTY = 13
 local args = {... }
 
 local CHEST_MAP = {}
@@ -26,13 +27,21 @@ local FIELD_MAP = {}
 local need_list = {}
 
 -- Will be harverst one time every FREQUENCY loop.
-local FREQUENCY_CHEST_DROP = 5
-local FREQUENCY_APPLE = 10
+local FREQUENCY_CHEST_DROP = 30
+local FREQUENCY_SALT = 4
+local FREQUENCY_WATER = 4
+local FREQUENCY_APPLE = 30
 local FREQUENCY_BREAD = 10
+local FREQUENCY_DOUGHT = 10
+local FREQUENCY_FLOUR = 10
 local FREQUENCY_TOAST = 10
-local FREQUENCY_MILK_TOFU = 10
-local FREQUENCY_SILKEN_TOFU = 11
-local FREQUENCY_HAMBURGER = 20
+local FREQUENCY_MILK_TOFU = 20
+local FREQUENCY_SILKEN_TOFU = 20
+local FREQUENCY_HAMBURGER = 25
+local FREQUENCY_CHEESEBURGER = 25
+local FREQUENCY_DELUXECHEESEBURGER = 25
+local FREQUENCY_DELIGHTEDMEAL = 25
+local FREQUENCY_CHEESE = 20
 
 local last_field
 
@@ -53,23 +62,34 @@ function init()
     tmp[#tmp][side.up] = "harvestcraft:firmtofuItem"
     tmp[#tmp][side.down] = "minecraft:wheat_seeds"
     tmp[#tmp + 1] = {}
-    tmp[#tmp][side.up] = nil
+    tmp[#tmp][side.up] = 'harvestcraft:cheeseItem'
     tmp[#tmp][side.down] = "harvestcraft:hamburgerItem"
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:deluxecheeseburgerItem'
+    tmp[#tmp][side.down] = "harvestcraft:cheeseburgerItem"
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:friesItem'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     tmp = {}
     tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:melonsmoothieItem'
     tmp[#tmp][side.down] = "TConstruct:oreBerries"
     tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:flourItem'
     tmp[#tmp][side.down] = "minecraft:wheat"
     tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:doughItem'
     tmp[#tmp][side.down] = "minecraft:apple"
     tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:delightedmealItem'
     tmp[#tmp][side.down] = "harvestcraft:tomatoItem"
     tmp[#tmp + 1] = {}
-    tmp[#tmp][side.down] = "harvestcraft:bread"
+    tmp[#tmp][side.up] = 'harvestcraft:coffeebeanItem'
+    tmp[#tmp][side.down] = "minecraft:bread"
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.down] = "harvestcraft:toastItem"
+    tmp[#tmp + 1] = {}
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:lettuceItem"
@@ -77,6 +97,9 @@ function init()
     FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:tomatoItem"
     FIELD_MAP[#FIELD_MAP + 1] = "minecraft:wheat"
     FIELD_MAP[#FIELD_MAP + 1] = "TConstruct:oreBerries"
+    FIELD_MAP[#FIELD_MAP + 1] = "minecraft:wheat"
+    FIELD_MAP[#FIELD_MAP + 1] = "minecraft:wheat"
+    FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:coffeebeanItem"
     last_field = #FIELD_MAP
 end
 
@@ -150,24 +173,86 @@ function harvest_apples()
 end
 
 --[[
-----    APPLES PRODUCTION
+----    BURGERS PRODUCTION
 --]]
 
 function make_hamburger()
-    if not utilitie.is_elem_in_list(need_list, 'harvestcraft:hamburgerItem') or not get_item('harvestcraft:toastItem') or not get_item('harvestcraft:firmtofuItem') then
-        return false
-    end
-    if not chest.get_item_from_chest('harvestcraft:skilletItem', nil, nil, side.down) then
-        print('Warning: Skillet not found')
-        return false
-    end
-    crafting.free_crafting_table()
-    if not crafting.place_item_for_craft('harvestcraft:skilletItem', 1) then
-        return false
-    end
-    while crafting.place_item_for_craft('harvestcraft:toastItem', 4, nil, 1) and crafting.place_item_for_craft('harvestcraft:firmtofuItem', 2, nil, 1) and crafting.craft() do
-        crafting.move_item_out_of_crafting_table('harvestcraft:hamburgerItem')
-    end
+    local ingredient = {}
+    local tool = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:toastItem'
+    ingredient[#ingredient]['slot'] = 4
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:firmtofuItem'
+    ingredient[#ingredient]['slot'] = 2
+    tool[#tool + 1] = {}
+    tool[#tool]['item'] = 'harvestcraft:skilletItem'
+    tool[#tool]['slot'] = 1
+
+    return make('harvestcraft:hamburgerItem', ingredient, tool)
+end
+
+function make_cheese()
+    local ingredient = {}
+    local tool = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:soymilkItem'
+    ingredient[#ingredient]['slot'] = 2
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:saltItem'
+    ingredient[#ingredient]['slot'] = 4
+    tool[#tool + 1] = {}
+    tool[#tool]['item'] = 'harvestcraft:potItem'
+    tool[#tool]['slot'] = 1
+
+    return make('harvestcraft:cheeseItem', ingredient, tool)
+end
+
+function make_cheeseburger()
+    local ingredient = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:hamburgerItem'
+    ingredient[#ingredient]['slot'] = 1
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:cheeseItem'
+    ingredient[#ingredient]['slot'] = 2
+
+    return make('harvestcraft:cheeseburgerItem', ingredient)
+end
+
+function make_deluxecheeseburger()
+    local ingredient = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:cheeseburgerItem'
+    ingredient[#ingredient]['slot'] = 1
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:lettuceItem'
+    ingredient[#ingredient]['slot'] = 2
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:tomatoItem'
+    ingredient[#ingredient]['slot'] = 4
+
+    return make('harvestcraft:delightedmealItem', ingredient)
+end
+
+function make_delightedmeal()
+    local ingredient = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:deluxecheeseburgerItem'
+    ingredient[#ingredient]['slot'] = 1
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:friesItem'
+    ingredient[#ingredient]['slot'] = 2
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:melonsmoothieItem'
+    ingredient[#ingredient]['slot'] = 4
+
+    return make('harvestcraft:deluxecheeseburgerItem', ingredient)
 end
 
 --[[
@@ -186,14 +271,14 @@ end
 
 function get_finished_milk_and_tofu()
     move.move(1, side.back)
-    chest.get_item_from_chest('harvestcraft:soymilkItem', nil, nil, side.back)
-    chest.get_item_from_chest('harvestcraft:firmtofuItem', nil, nil, side.back)
+    while chest.get_item_from_chest('harvestcraft:soymilkItem', nil, nil, side.back) do end
+    while chest.get_item_from_chest('harvestcraft:firmtofuItem', nil, nil, side.back) do end
     move.move(1, side.front)
 end
 
 function get_finished_silken_tofu()
     move.move(1, side.back)
-    chest.get_item_from_chest('harvestcraft:silkentofuItem', nil, nil, side.back)
+    while chest.get_item_from_chest('harvestcraft:silkentofuItem', nil, nil, side.back) do end
     move.move(1, side.front)
 end
 
@@ -229,9 +314,46 @@ function craft_bread()
     end
 end
 
+function make_flour()
+    local ingredient = {}
+    local tool = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'minecraft:wheat'
+    ingredient[#ingredient]['slot'] = 2
+    tool[#tool + 1] = {}
+    tool[#tool]['item'] = 'harvestcraft:mortarandpestleItem'
+    tool[#tool]['slot'] = 1
+
+    return make('harvestcraft:flourItem', ingredient, tool)
+end
+
+function make_dough()
+    local ingredient = {}
+    local tool = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:freshwaterItem'
+    ingredient[#ingredient]['slot'] = 2
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:flourItem'
+    ingredient[#ingredient]['slot'] = 4
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:saltItem'
+    ingredient[#ingredient]['slot'] = 5
+    tool[#tool + 1] = {}
+    tool[#tool]['item'] = 'harvestcraft:mixingbowlItem'
+    tool[#tool]['slot'] = 1
+
+    return make('harvestcraft:doughItem', ingredient, tool)
+end
+
 function make_bread()
     if not utilitie.is_elem_in_list(need_list, 'minecraft:bread') or not get_item('minecraft:wheat') then
         return false
+    end
+    if get_item('minecraft:wheat') then
+        get_item('minecraft:wheat')
     end
     craft_bread()
 end
@@ -249,7 +371,15 @@ end
 function get_finished_toasts()
     move.move(1, side.up)
     move.move(3, side.back)
-    chest.get_item_from_chest('harvestcraft:toastItem', nil, nil, side.down)
+    while chest.get_item_from_chest('harvestcraft:toastItem', nil, nil, side.down) do end
+    move.move(3, side.front)
+    move.move(1, side.down)
+end
+
+function get_finished_bread()
+    move.move(1, side.up)
+    move.move(3, side.back)
+    while chest.get_item_from_chest('minecraft:bread', nil, nil, side.down) do end
     move.move(3, side.front)
     move.move(1, side.down)
 end
@@ -262,6 +392,16 @@ function make_toast()
     chest.drop_item_to_chest('minecraft:bread', nil, nil, side.left)
     go_base_from_toast_furnace()
     get_finished_toasts()
+end
+
+function bake_dough()
+    if not utilitie.is_elem_in_list(need_list, 'minecraft:bread') or not get_item('harvestcraft:doughItem') then
+        return false
+    end
+    go_toast_furnace_from_base()
+    chest.drop_item_to_chest('harvestcraft:doughItem', nil, nil, side.left)
+    go_base_from_toast_furnace()
+    get_finished_bread()
 end
 
 --[[
@@ -475,6 +615,13 @@ end
 ----    INVENTORY CONTROLL
 --]]
 
+function check_inventory()
+    if inventory.free_slots_amount() < 13 then
+        inventory_controll(true)
+        garbage_all()
+    end
+end
+
 function move_base_to_chest(line_i, chest_i)
     move.move(1, side.up)
     move.move(6, side.front)
@@ -495,7 +642,7 @@ end
 
 function get_chest_side(column, item)
     local side_i
-    
+
     if column[side.up] and column[side.up] == item then
         return side.up
     elseif column[side.down] and column[side.down] == item then
@@ -509,7 +656,7 @@ function get_chest_in_line(line, item)
     local side_i
 
     chest_i = 1
-    while chest_i < #line do
+    while chest_i <= #line do
         side_i = get_chest_side(line[chest_i], item)
         if side_i then
             return chest_i, side_i
@@ -544,6 +691,7 @@ function get_item(item)
 
     line_i, chest_i, side_i = get_chest(item)
     if not line_i then
+        print('Warning: Chest for ' .. item .. ' not found.')
         return false
     end
     move_base_to_chest(line_i, chest_i, side_i)
@@ -630,6 +778,115 @@ function garbage_all()
 end
 
 --[[
+----    CRAFTING
+--]]
+
+function get_ingredients(ingredient)
+    local i
+
+    i = 1
+    while i <= #ingredient do
+        if not get_item(ingredient[i]['item']) then
+            return false
+        end
+        i = i + 1
+    end
+    return true
+end
+
+function move_tool(tool, drop_mode)
+    local i
+
+    i = 1
+    while i <= #tool do
+        if drop_mode and not chest.drop_item_to_chest(tool[i]['item'], nil, nil, side.down) then
+            return false
+        elseif not drop_mode and not chest.get_item_from_chest(tool[i]['item'], nil, nil, side.down) then
+            print('Warning: tool ' .. tostring(tool[i]['item']) .. 'not found')
+            return false
+        end
+        i = i + 1
+    end
+    return true
+end
+
+function get_pattern(ingredient, tool)
+    local pattern = {}
+    local i
+
+    i = 1
+    while i <= 9 do
+        pattern[i] = false
+        i = i + 1
+    end
+    i = 1
+    while i <= #ingredient do
+        pattern[ingredient[i]['slot']] = {}
+        pattern[ingredient[i]['slot']]['item'] = ingredient[i]['item']
+        pattern[ingredient[i]['slot']]['amount'] = 64
+        i = i + 1
+    end
+    i = 1
+    while tool and i <= #tool do
+        pattern[tool[i]['slot']] = {}
+        pattern[tool[i]['slot']]['item'] = tool[i]['item']
+        pattern[tool[i]['slot']]['amount'] = 1
+        i = i + 1
+    end
+    return pattern
+end
+
+function make_get_max(ingredient)
+    local i
+    local data
+    local min
+    local craft_bench = {}
+
+    craft_bench[1] = 1
+    craft_bench[2] = 2
+    craft_bench[3] = 3
+    craft_bench[4] = 5
+    craft_bench[5] = 6
+    craft_bench[6] = 7
+    craft_bench[7] = 9
+    craft_bench[8] = 10
+    craft_bench[9] = 11
+
+    min = 64
+    i = 1
+    while i <= #ingredient do
+        data = component.inventory_controller.getStackInInternalSlot(craft_bench[ingredient[i]['slot']])
+
+        if not data then
+            print(utilitie.var_dump(ingredient[i]))
+            os.exit()
+        end
+        if min < data.size then
+            min = data.size
+        end
+        i = i + 1
+    end
+    return min
+end
+
+function make(desired, ingredient, tool)
+    local i
+
+    i = 1
+    if not utilitie.is_elem_in_list(need_list, desired) or not get_ingredients(ingredient) or (tool and not move_tool(tool)) then
+        return false
+    end
+    if crafting.prepare_craft(get_pattern(ingredient, tool)) then
+        crafting.craft(make_get_max(ingredient))
+    end
+    if tool and not move_tool(tool, true) then
+        print('Error: can\'t drop tool')
+        os.exit()
+    end
+    return true
+end
+
+--[[
 ----    OTHER
 --]]
 
@@ -640,29 +897,75 @@ function check_actions(frequency_iter)
         print('Needed ressources: ' .. utilitie.var_dump(need_list))
         garbage_all()
     end
+    if frequency_iter % FREQUENCY_FLOUR == 0 then
+        energy.wait_charging()
+        make_flour()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_DOUGHT == 0 then
+        energy.wait_charging()
+        make_dough()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_DELUXECHEESEBURGER == 0 then
+        energy.wait_charging()
+        make_delightedmeal()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_DELUXECHEESEBURGER == 0 then
+        energy.wait_charging()
+        make_deluxecheeseburger()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_CHEESEBURGER == 0 then
+        energy.wait_charging()
+        make_cheeseburger()
+        check_inventory()
+    end
     if frequency_iter % FREQUENCY_HAMBURGER == 0 then
         energy.wait_charging()
         make_hamburger()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_CHEESE == 0 then
+        energy.wait_charging()
+        make_cheese()
+        check_inventory()
     end
     if frequency_iter % FREQUENCY_SILKEN_TOFU == 0 then
         energy.wait_charging()
         make_silken_tofu()
+        check_inventory()
     end
     if frequency_iter % FREQUENCY_MILK_TOFU == 0 then
         energy.wait_charging()
         make_milk_and_tofu()
+        check_inventory()
     end
     if frequency_iter % FREQUENCY_BREAD == 0 then
         energy.wait_charging()
-        make_bread()
+        bake_dough()
+        check_inventory()
     end
     if frequency_iter % FREQUENCY_TOAST == 0 then
         energy.wait_charging()
         make_toast()
+        check_inventory()
     end
     if frequency_iter % FREQUENCY_APPLE == 0 then
         energy.wait_charging()
         harvest_apples()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_SALT == 0 then
+        energy.wait_charging()
+        make_salt()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_WATER == 0 then
+        energy.wait_charging()
+        make_water()
+        check_inventory()
     end
 end
 
@@ -672,14 +975,6 @@ function core()
     frequency_iter = 0
     while true do
         check_actions(frequency_iter)
-        energy.wait_charging()
-        make_salt()
-        inventory_controll(true, false, false)
-        garbage_all()
-        energy.wait_charging()
-        make_water()
-        inventory_controll(true, false, false)
-        garbage_all()
         energy.wait_charging()
         harvest_next_field()
         os.sleep(MAIN_LOOP_SECONDS_SLEEP)
