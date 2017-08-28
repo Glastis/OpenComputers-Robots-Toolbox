@@ -1,4 +1,4 @@
-local build = 48
+local build = 49
 --[[
 		Seriously, who cares of headers ?
 		License ? Well, consider that script is on MIT license and do whateaver you want with it. I don't care.
@@ -6,7 +6,7 @@ local build = 48
 ]]--
 
 
-local version = "2.0.1.3"
+local version = "2.0.1.4"
 local robot = require("robot")
 local side = require("sides")
 local component = require("component")
@@ -176,76 +176,76 @@ function file_exists(name)
 end
 function get_minerals()
 	if not file_exists(config_filename) and not write_default_config(config_filename, "minecraft:diamond_ore\n" ..
-			                                                                          "minecraft:iron_ore\n" ..
-			                                                                          "minecraft:gold_ore\n" ..
-			                                                                          "minecraft:emerald_ore\n" ..
-			                                                                          "minecraft:lapis_ore\n" ..
-			                                                                          "minecraft:dye\n" ..
-			                                                                          "minecraft:iron_ingot\n" ..
-			                                                                          "minecraft:emerald\n" ..
-			                                                                          "minecraft:diamond\n" ..
-			                                                                          "minecraft:diamond_block\n" ..
-			                                                                          "minecraft:coal_block\n" ..
-			                                                                          "minecraft:lapis_block\n" ..
-			                                                                          "minecraft:redstone_block\n" ..
-			                                                                          "minecraft:glowstone\n" ..
-			                                                                          "minecraft:glowstone_dust\n" ..
-			                                                                          "minecraft:quartz\n" ..
-			                                                                          "minecraft:quartz_ore\n" ..
-			                                                                          "minecraft:quartz_block\n" ..
-			                                                                          "minecraft:chest\n" ..
-			                                                                          "minecraft:diamond_pickaxe\n" ..
-			                                                                          "minecraft:stone_pickaxe\n" ..
-			                                                                          "minecraft:iron_pickaxe\n" ..
-			                                                                          "minecraft:log\n" ..
-			                                                                          "minecraft:planks\n" ..
-			                                                                          "minecraft:stick\n" ..
-			                                                                          "EnderStorage:enderChest\n" ..
-			                                                                          "simpleores:copper_ore\n" ..
-			                                                                          "simpleores:tin_ore\n" ..
-			                                                                          "simpleores:mythril_ore\n" ..
-			                                                                          "simpleores:adamantium_ore\n" ..
-			                                                                          "simpleores:onyx_ore\n" ..
-			                                                                          "IC2:blockOreCopper\n" ..
-			                                                                          "IC2:blockOreTin\n" ..
-			                                                                          "IC2:blockOreUran\n" ..
-			                                                                          "IC2:blockOreLead\n" ..
-			                                                                          "minechem:tile.oreUranium\n" ..
-			                                                                          "qCraft:quantumore\n" ..
-			                                                                          "qCraft:quantumoreglowing\n" ..
-			                                                                          "tc:oreTC\n" ..
-			                                                                          "ProjRed|Exploration:projectred.exploration.ore\n" ..
-                                                                                      "ProjRed|Core:projectred.core.part\n" ..
-			                                                                          "minecraft:redstone\n" ..
-			                                                                          "minecraft:coal_ore\n" ..
-			                                                                          "minecraft:coal\n" ..
-			                                                                          "ThermalFoundation:Ore\n" ..
-			                                                                          "minecraft:redstone_ore\n" ..
-			                                                                          "qCraft:dust\n" ..
-			                                                                          "BigReactors:YelloriteOre\n" ..
-			                                                                          "tc:oreTC\nThermalFoundation:Ore\n" ..
-			                                                                          "SGCraft:naquadahOre\n" ..
-                                                                                      "SGCraft:naquadah\n" ..
-                                                                                      "TConstruct:SearedBrick\n") then
+			"minecraft:iron_ore\n" ..
+			"minecraft:gold_ore\n" ..
+			"minecraft:emerald_ore\n" ..
+			"minecraft:lapis_ore\n" ..
+			"minecraft:dye\n" ..
+			"minecraft:iron_ingot\n" ..
+			"minecraft:emerald\n" ..
+			"minecraft:diamond\n" ..
+			"minecraft:diamond_block\n" ..
+			"minecraft:coal_block\n" ..
+			"minecraft:lapis_block\n" ..
+			"minecraft:redstone_block\n" ..
+			"minecraft:glowstone\n" ..
+			"minecraft:glowstone_dust\n" ..
+			"minecraft:quartz\n" ..
+			"minecraft:quartz_ore\n" ..
+			"minecraft:quartz_block\n" ..
+			"minecraft:chest\n" ..
+			"minecraft:diamond_pickaxe\n" ..
+			"minecraft:stone_pickaxe\n" ..
+			"minecraft:iron_pickaxe\n" ..
+			"minecraft:log\n" ..
+			"minecraft:planks\n" ..
+			"minecraft:stick\n" ..
+			"EnderStorage:enderChest\n" ..
+			"simpleores:copper_ore\n" ..
+			"simpleores:tin_ore\n" ..
+			"simpleores:mythril_ore\n" ..
+			"simpleores:adamantium_ore\n" ..
+			"simpleores:onyx_ore\n" ..
+			"IC2:blockOreCopper\n" ..
+			"IC2:blockOreTin\n" ..
+			"IC2:blockOreUran\n" ..
+			"IC2:blockOreLead\n" ..
+			"minechem:tile.oreUranium\n" ..
+			"qCraft:quantumore\n" ..
+			"qCraft:quantumoreglowing\n" ..
+			"tc:oreTC\n" ..
+			"ProjRed|Exploration:projectred.exploration.ore\n" ..
+			"ProjRed|Core:projectred.core.part\n" ..
+			"minecraft:redstone\n" ..
+			"minecraft:coal_ore\n" ..
+			"minecraft:coal\n" ..
+			"ThermalFoundation:Ore\n" ..
+			"minecraft:redstone_ore\n" ..
+			"qCraft:dust\n" ..
+			"BigReactors:YelloriteOre\n" ..
+			"tc:oreTC\nThermalFoundation:Ore\n" ..
+			"SGCraft:naquadahOre\n" ..
+			"SGCraft:naquadah\n" ..
+			"TConstruct:SearedBrick\n") then
 		return false
 	end
-	if not file_exists(stockpile_filename) and not write_default_config(stockpile_filename, 
-                                                                        "minecraft:diamond_ore\n" ..
-                                                                        "minecraft:iron_ore\n" ..
-                                                                        "minecraft:gold_ore\n" ..
-                                                                        "minecraft:emerald_ore\n" ..
-                                                                        "minecraft:lapis_ore\n" ..
-                                                                        "minecraft:dye\n" ..
-                                                                        "minecraft:iron_ingot\n" ..
-                                                                        "minecraft:emerald\n" ..
-                                                                        "minecraft:diamond\n" ..
-                                                                        "minecraft:diamond_block\n" ..
-                                                                        "minecraft:coal_block\n" ..
-                                                                        "minecraft:lapis_block\n" ..
-                                                                        "minecraft:redstone_block\n" ..
-                                                                        "minecraft:glowstone\n" ..
-                                                                        "minecraft:quartz_ore\n" ..
-                                                                        "minecraft:quartz_block\n") then
+	if not file_exists(stockpile_filename) and not write_default_config(stockpile_filename,
+		"minecraft:diamond_ore\n" ..
+				"minecraft:iron_ore\n" ..
+				"minecraft:gold_ore\n" ..
+				"minecraft:emerald_ore\n" ..
+				"minecraft:lapis_ore\n" ..
+				"minecraft:dye\n" ..
+				"minecraft:iron_ingot\n" ..
+				"minecraft:emerald\n" ..
+				"minecraft:diamond\n" ..
+				"minecraft:diamond_block\n" ..
+				"minecraft:coal_block\n" ..
+				"minecraft:lapis_block\n" ..
+				"minecraft:redstone_block\n" ..
+				"minecraft:glowstone\n" ..
+				"minecraft:quartz_ore\n" ..
+				"minecraft:quartz_block\n") then
 		return false
 	end
 	minerals = load_config(config_filename)
@@ -373,7 +373,7 @@ function check_fuel()
 	local cleaned
 
 	cleaned = false
-	if component.generator.count() >= 16 and computer.energy() >= 25000 then
+	if component.generator.count() >= 16 and computer.energy() >= 30000 then
 		return true
 	end
 	while not select_empty_case() do
@@ -384,7 +384,7 @@ function check_fuel()
 		select_fuel()
 	end
 	component.generator.insert()
-	while computer.energy() < 40000 do
+	while computer.energy() < 40300 do
 		print("Need generating fuel before continue. Waiting 10 secs.")
 		os.sleep(10)
 		if component.generator.count() <= 0 then
@@ -893,7 +893,7 @@ function compact_all()
 	repack_item("minecraft:redstone")
 	compact_item(4, "minecraft:quartz")
 	repack_item("minecraft:quartz")
-	compact_item(4, "minecraft:glowstone_dust")
+	compact_item(4, "minecraft:glowstone_dust", true)
 	repack_item("minecraft:glowstone_dust")
 end
 function craft_pickaxe(material)
@@ -1047,13 +1047,23 @@ function craft_all_blocs(bloc_size, item, meta)
 	end
 	return component.crafting.craft()
 end
-function compact_item(bloc_size, item, meta)
+function compact_item(bloc_size, item, meta, clean)
 	local amount = item_amount(item, meta)
 
-	if amount >= bloc_size and free_crafting_table() then
+	if amount >= bloc_size then
+		if not free_crafting_table() then
+			clean_inventory()
+			if not free_crafting_table() then
+				return false
+			end
+		end
 		craft_all_blocs(bloc_size, item, meta)
-		clean_inventory()
+		if clean then
+			clean_inventory()
+		end
+		return true
 	end
+	return false
 end
 function item_amount(item, meta)
 	local slot = 1

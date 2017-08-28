@@ -4,11 +4,14 @@ local component = require("component")
 local inventory = {}
 
 local function select_item(item, meta)
-	local slot = 1
-	local size = robot.inventorySize()
+	local slot
+	local size
+	local data
 
+	slot = 1
+	size = robot.inventorySize()
 	while slot <= size do
-		local data = component.inventory_controller.getStackInInternalSlot(slot)
+		data = component.inventory_controller.getStackInInternalSlot(slot)
 		if data and data.name == item and (not meta or data.damage == meta) then
 			robot.select(slot)
 			return true
@@ -18,6 +21,26 @@ local function select_item(item, meta)
 	return false
 end
 inventory.select_item = select_item
+
+local function select_fuel()
+	local slot
+	local size
+	local data
+
+	slot = 1
+	size = robot.inventorySize()
+	while slot <= size do
+		data = component.inventory_controller.getStackInInternalSlot(slot)
+		if data and (data.name == 'minecraft:coal' or
+				(data.name == 'tc:oreTC' and data.damage == 2)) then
+			robot.select(slot)
+			return true
+		end
+		slot = slot + 1
+	end
+	return false
+end
+inventory.select_fuel = select_fuel
 
 local function select_item_failsafe(item, trymax, meta, sleeptime)
 	local try = 0
@@ -53,15 +76,6 @@ local function equip(item, meta)
 	return success
 end
 inventory.equip = equip
-
-local function unequip()
-	if not select_empty_slot() then
-		return false
-	end
-	component.inventory_controller.equip()
-	return true
-end
-inventory.unequip = unequip
 
 local function select_next_item(slot, item, meta)
 	local data
@@ -174,6 +188,15 @@ local function select_empty_slot()
 	return false
 end
 inventory.select_empty_slot = select_empty_slot
+
+local function unequip()
+	if not inventory.select_empty_slot() then
+		return false
+	end
+	component.inventory_controller.equip()
+	return true
+end
+inventory.unequip = unequip
 
 local function select_item_out_of_workbench(item, meta)
 	local slot

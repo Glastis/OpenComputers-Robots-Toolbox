@@ -6,6 +6,7 @@ local inventory = require('inventory')
 local environement = require('environement')
 local crafting = require('crafting')
 local computer = require('computer')
+local net = require('net')
 
 local component = require('component')
 local robot = require('robot')
@@ -16,9 +17,12 @@ local arg = {...}
 local CRITICAL_ENERGY_LEVEL = 10000
 local CHECK_FUEL_FREQ = 10
 local CHECK_INV_FREQ = 32
+local PASTE_URL = 'https://pastebin.com/raw/ztYL1hrP'
+local FILEPATH = 'dig'
+
 
 local offset = {}
-local check_fuel_act = 0
+local check_fuel_act = CHECK_INV_FREQ
 local check_inv_act = 0
 
 --[[
@@ -26,7 +30,13 @@ local check_inv_act = 0
 --]]
 
 function update()
-
+    print('Updating...')
+    if net.get_page_to_file(PASTE_URL, FILEPATH) then
+        print('Updated successfully.')
+        return true
+    end
+    print('Failed to update.')
+    return false
 end
 
 function equip_pick()
@@ -40,11 +50,13 @@ function place_chest()
     if not inventory.select_item('EnderStorage:enderChest', 3003) then
         return false
     end
-    while not robot.place() and move.move(1, side.down, true) do
+    robot.swing()
+    while not robot.place() do
+        move.move(1, side.down, true)
+        robot.swing()
         i = i + 1
     end
-    move.move(i, side.up, true)
-    return true
+    return i
 end
 
 function get_inventory_map()
@@ -63,21 +75,30 @@ function get_inventory_map()
         inv_map[#inv_map + 1] = tmp
         i = i + 1
     end
+    return inv_map
 end
 
 function drop_all(inv_map)
     local i
+    local tmp_offset
 
     i = 1
-    place_chest()
-    while i <= #inv_map do
-        if inv_map[i].name == 'minecraft:cobblestone' then
-            robot.select(i)
-            robot.dropDown()
-        elseif inv_map[i] then
-
-        end
+    tmp_offset = place_chest()
+    if not tmp_offset then
+        print('error cant place chest')
+        return false
     end
+    while i <= #inv_map do
+        robot.select(i)
+        if inv_map[i].name == 'minecraft:cobblestone' then
+            robot.dropDown()
+        elseif inv_map[i].name ~= 'ExtraUtilities:destructionpickaxe' then
+            robot.drop()
+        end
+        i = i + 1
+    end
+    robot.swing()
+    move.move(tmp_offset, side.up, true)
 end
 
 function check_inventory()
@@ -85,8 +106,7 @@ function check_inventory()
 
     if check_inv_act > CHECK_INV_FREQ then
         inv_map = get_inventory_map()
-        if not inv_map then
-            place_chest()
+        if inv_map then
             drop_all(inv_map)
         end
         check_inv_act = 0
@@ -153,7 +173,7 @@ end
 function slice(maxx, maxy, offset_bkp)
     column(maxy, offset.y)
     while (offset_bkp == 0 and maxx > offset.x) or (offset_bkp > 0 and offset.x > 0) do
-        if offset_bkp == 0 and maxx > offset.x + 1 then
+        if offset_bkp == 0 then
             move.move(1, side.front, true)
             offset.x = offset.x + 1
         else
@@ -203,6 +223,10 @@ end
 function core()
     init()
     cube(tonumber(arg[1]), tonumber(arg[2]), tonumber(arg[3]))
+end
+
+if arg[1] and (arg[1] == '-u' or arg[1] == '--update') then
+    return update()
 end
 
 if not arg[1] or not arg[2] or not arg[3] or (tonumber(arg[3]) > 1 and (not arg[4] or (arg[4] ~= 'left' and arg[4] ~= 'right'))) then

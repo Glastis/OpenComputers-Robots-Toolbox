@@ -7,11 +7,14 @@ local move = require('movement')
 
 local environement = {}
 
-local function get_bloc(direction)
+local function get_bloc(direction, full_info)
     if not direction then
         direction = side.front
     end
-    return component.geolyzer.analyze(direction)
+    if full_info then
+        return component.geolyzer.analyze(direction)
+    end
+    return component.geolyzer.analyze(direction).name
 end
 environement.get_bloc = get_bloc
 

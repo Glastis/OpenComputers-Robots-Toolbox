@@ -1,10 +1,10 @@
-local move = require('common.movement')
-local utilitie = require('common.utilities')
-local energy = require('common.energy')
-local chest = require('common.chest')
-local inventory = require('common.inventory')
-local environement = require('common.environement')
-local crafting = require('common.crafting')
+local move = require('movement')
+local utilitie = require('utilities')
+local energy = require('energy')
+local chest = require('chest')
+local inventory = require('inventory')
+local environement = require('environement')
+local crafting = require('crafting')
 
 local component = require('component')
 local robot = require('robot')
@@ -422,10 +422,25 @@ function go_salt_to_base()
     move.move(4, side.back)
 end
 
+function empty_bucket()
+    if not crafting.craft() then
+        if not crafting.free_crafting_table() then
+            chest.drop_item_to_chest('minecraft:water_bucket', nil, nil, side.up)
+            return false
+        end
+        crafting.place_item_for_craft('minecraft:water_bucket', 1)
+        return crafting.craft()
+    end
+    return true
+end
+
 function draw_water(amount)
-    if not chest.get_item_from_chest('minecraft:bucket', nil, nil, side.up) then
+    if not chest.get_item_from_chest('minecraft:bucket', nil, nil, side.up) and not chest.get_item_from_chest('minecraft:water_bucket', nil, nil, side.up) then
         print('Bucket not found, can\'t craft water.')
         return false
+    end
+    if inventory.select_item('minecraft:water_bucket') then
+        empty_bucket()
     end
     if amount / 64 > robot.inventorySize() - 10 then
         amount = (robot.inventorySize() - 10) * 64
@@ -434,9 +449,16 @@ function draw_water(amount)
     crafting.place_item_for_craft('minecraft:bucket', 1)
     while amount > 0 do
         environement.fill_bucket(robot.front, true, true)
-        crafting.craft()
+        if not empty_bucket() then
+            return false
+        end
         crafting.move_item_out_of_crafting_table('harvestcraft:freshwaterItem')
         amount = amount - 1
+    end
+    if inventory.select_item('minecraft:water_bucket') then
+        crafting.free_crafting_table()
+        crafting.place_item_for_craft('minecraft:water_bucket', 1)
+        crafting.craft()
     end
     chest.drop_item_to_chest('minecraft:bucket', nil, nil, side.up)
     return true
@@ -470,16 +492,15 @@ function make_salt()
 end
 
 function make_water()
+    local retval
+
     if not utilitie.is_elem_in_list(need_list, 'harvestcraft:freshwaterItem') then
         return false
     end
     go_base_to_salt()
-    if not draw_water(WATER_PRODUCTION_STACK_AMOUNT * 64) then
-        go_salt_to_base()
-        return false
-    end
+    retval = draw_water(WATER_PRODUCTION_STACK_AMOUNT * 64)
     go_salt_to_base()
-    return true
+    return retval
 end
 
 --[[
@@ -897,6 +918,16 @@ function check_actions(frequency_iter)
         print('Needed ressources: ' .. utilitie.var_dump(need_list))
         garbage_all()
     end
+    if frequency_iter % FREQUENCY_SALT == 0 then
+        energy.wait_charging()
+        make_salt()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_WATER == 0 then
+        energy.wait_charging()
+        make_water()
+        check_inventory()
+    end
     if frequency_iter % FREQUENCY_FLOUR == 0 then
         energy.wait_charging()
         make_flour()
@@ -955,16 +986,6 @@ function check_actions(frequency_iter)
     if frequency_iter % FREQUENCY_APPLE == 0 then
         energy.wait_charging()
         harvest_apples()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_SALT == 0 then
-        energy.wait_charging()
-        make_salt()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_WATER == 0 then
-        energy.wait_charging()
-        make_water()
         check_inventory()
     end
 end

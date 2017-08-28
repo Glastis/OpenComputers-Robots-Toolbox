@@ -13,7 +13,7 @@ local movement = {}
 ----			force		optional,	set to true if robot must break bloc if it don't success to move
 ----
 --]]
-local function forward(amount, force)
+local function forward(amount, force, func)
 	local i
 
 	i = amount
@@ -23,10 +23,16 @@ local function forward(amount, force)
 	while i > 0 do
 		if robot.forward() then
 			i = i - 1
+			if func then
+				func()
+			end
 		elseif force then
 			robot.swing()
             if robot.forward() then
                 i = i - 1
+				if func then
+					func()
+				end
             else
 			    os.sleep(ROBOT_SLEEP_BREAK_MOVE_TRY)
             end
@@ -45,17 +51,23 @@ movement.forward = forward
 ----			force		optional,	set to true if robot must break bloc if it don't success to move
 ----
 --]]
-local function up(amount, force)
+local function up(amount, force, func)
 	if not amount then
 		amount = 1
 	end
 	while amount > 0 do
 		if robot.up() then
 			amount = amount - 1
+			if func then
+				func()
+			end
 		elseif force then
 			robot.swingUp()
             if robot.up() then
                 amount = amount - 1
+				if func then
+					func()
+				end
             else
                 os.sleep(ROBOT_SLEEP_BREAK_MOVE_TRY)
             end
@@ -74,17 +86,23 @@ movement.up = up
 ----			force		optional,	set to true if robot must break bloc if it don't success to move
 ----
 --]]
-local function down(amount, force)
+local function down(amount, force, func)
 	if not amount then
 		amount = 1
 	end
 	while amount > 0 do
 		if robot.down() then
 			amount = amount - 1
+			if func then
+				func()
+			end
 		elseif force then
 			robot.swingDown()
             if robot.down() then
                 amount = amount - 1
+				if func then
+					func()
+				end
             else
                 os.sleep(ROBOT_SLEEP_BREAK_MOVE_TRY)
             end
@@ -120,19 +138,37 @@ local function move_orientation_revert(orientation)
 end
 movement.move_orientation_revert = move_orientation_revert
 
-local function move(amount, orientation, force)
+local function get_orientation_revert(orientation)
+	if orientation == side.left then
+		return side.right
+	elseif orientation == side.right then
+		return side.left
+    elseif orientation == side.back then
+        return side.front
+    elseif orientation == side.front then
+        return side.back
+    elseif orientation == side.up then
+        return side.down
+    elseif orientation == side.down then
+        return side.up
+    end
+    return nil
+end
+movement.get_orientation_revert = get_orientation_revert
+
+local function move(amount, orientation, force, func)
 	if orientation then
         if orientation == side.up then
-            up(amount, force)
+            up(amount, force, func)
         elseif orientation == side.down then
-            down(amount, force)
+            down(amount, force, func)
         else
             move_orientation(orientation)
-			forward(amount, force)
+			forward(amount, force, func)
             move_orientation_revert(orientation)
 		end
 	else
-		forward(amount, force)
+		forward(amount, force, func)
 	end
 end
 movement.move = move
