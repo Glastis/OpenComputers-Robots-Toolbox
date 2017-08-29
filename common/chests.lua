@@ -234,32 +234,46 @@ chest.drop = drop
 --[[
 ----	purpose: Drop all same item in a chest in first(s) free emplacement(s) (empty or unfilled stack slot).
 ----
-----  	params: chest_side	requiered,  where is the chest compared to the robot, number. eg 'side.left'
-----  			from_slot, 	requiered, 	slot of robot to be drop.
-----			amount, 	optional, 	maximum amount of items to suck.
-----			to_slot, 	optional, 	chest slot that will receive items. If no provided, then it will drop into the first empty/not fully stacked slot.
-----			search, 	optional, 	set to true to search in all inventory to try to pack with others items, in case of robot.drop() doesn't.
+----  	params: chest_side		requiered,  where is the chest compared to the robot, number. eg 'side.left'
+----  			from_slot, 		requiered, 	slot of robot to be drop.
+----			amount, 		optional, 	maximum amount of items to drop (amount from all inventory, not slot).
+----			to_slot, 		optional, 	chest slot that will receive items. If no provided, then it will drop into the first empty/not fully stacked slot.
+----			inventory_map, 	optional, 	will search into this table instead of inventory if provided.
 ----
 ----	return: true		if at least one item was drop to chest
 ----			false		if nothing moved
 --]]
-local function drop_item_to_chest(item, meta, amount, chest_side, search)
+local function drop_item_to_chest(item, meta, amount, chest_side, inventory_map)
 	local slot = 1
+    local tmpamount
 	local size
 
 	size = robot.inventorySize()
+	if inventory_map then
+		size = #inventory_map
+    elseif amount then
+        inventory_map = inventory.get_inventory_map()
+	end
 	if not chest_side then
 		chest_side = side.front
     end
-	while slot <= size do
+	while slot <= size and (not amount or amount > 0) do
 		local data
 
-		data = component.inventory_controller.getStackInInternalSlot(slot)
-
+		if inventory_map then
+			data = inventory_map[slot]
+		else
+			data = component.inventory_controller.getStackInInternalSlot(slot)
+		end
 		if data and data.name == item and (not meta or data.damage == meta) then
-			if search and not drop_slot_to_chest(chest_side, slot, amount) then
-				return false
-            elseif not search and not drop(chest_side, amount, slot) then
+            tmpamount = data.size
+            if amount and data.size > amount then
+                tmpamount = amount
+                amount = 0
+            elseif amount then
+                amount = amount - data.size
+            end
+            if not drop(chest_side, tmpamount, slot) then
                 return false
 			end
 		end

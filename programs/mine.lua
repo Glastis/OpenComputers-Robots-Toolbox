@@ -85,6 +85,7 @@ function remove_recharge_base(y)
 end
 
 function activate_charger()
+    redstone.setOutput(side.down, 0)
     redstone.setOutput(side.down, 15)
 end
 
@@ -462,7 +463,7 @@ function init()
     garbage_list[#garbage_list + 1] = 'minecraft:stonebrick'
     garbage_list[#garbage_list + 1] = 'minecraft:water'
     garbage_list[#garbage_list + 1] = 'minecraft:cobblestone'
-    garbage_list[#garbage_list + 1] = 'minecraft:lava'
+    garbage_list[#garbage_list + 1] = 'minecraft:flowing_lava'
     garbage_list[#garbage_list + 1] = 'minecraft:mossy_cobblestone'
     garbage_list[#garbage_list + 1] = 'minecraft:nether_brick_stairs'
     garbage_list[#garbage_list + 1] = 'minecraft:netherrack'

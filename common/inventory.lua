@@ -3,6 +3,27 @@ local component = require("component")
 
 local inventory = {}
 
+local function get_inventory_map()
+    local map = {}
+    local size
+    local slot
+    local data
+
+    slot = 1
+    size = robot.inventorySize()
+    while slot <= size do
+        data = component.inventory_controller.getStackInInternalSlot(slot)
+        if not data then
+            map[#map + 1] = false
+        else
+            map[#map + 1] = data
+        end
+        slot = slot + 1
+    end
+    return map
+end
+inventory.get_inventory_map = get_inventory_map
+
 local function select_item(item, meta)
 	local slot
 	local size
@@ -221,18 +242,25 @@ local function select_item_out_of_workbench(item, meta)
 end
 inventory.select_item_out_of_workbench = select_item_out_of_workbench
 
-local function item_amount(item, meta)
+local function item_amount(item, meta, inventory_map)
 	local data
 	local slot
 	local size
 	local amount
 
 	slot = 1
-	size = robot.inventorySize()
+    if inventory_map then
+	    size = #inventory_map
+    else
+        size = robot.inventorySize()
+    end
 	amount = 0
 	while slot <= size do
-		data = component.inventory_controller.getStackInInternalSlot(slot)
-
+        if inventory_map then
+            data = inventory_map[slot]
+        else
+            data = component.inventory_controller.getStackInInternalSlot(slot)
+        end
 		if data and data.name == item and (not meta or data.damage == meta) then
 			amount = amount + data.size
 		end

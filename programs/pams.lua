@@ -69,6 +69,13 @@ function init()
     tmp[#tmp][side.down] = "harvestcraft:cheeseburgerItem"
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:friesItem'
+    tmp[#tmp][side.down] = 'harvestcraft:whitemushroomItem'
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:zucchiniItem'
+    tmp[#tmp][side.down] = "harvestcraft:cabbageItem"
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:tealeafItem'
+    tmp[#tmp][side.down] = "harvestcraft:cupofteaItem"
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     tmp = {}
@@ -88,19 +95,34 @@ function init()
     tmp[#tmp][side.up] = 'harvestcraft:coffeebeanItem'
     tmp[#tmp][side.down] = "minecraft:bread"
     tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = "harvestcraft:cottonItem"
     tmp[#tmp][side.down] = "harvestcraft:toastItem"
     tmp[#tmp + 1] = {}
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
-    FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:lettuceItem"
-    FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:soybeanItem"
-    FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:tomatoItem"
-    FIELD_MAP[#FIELD_MAP + 1] = "minecraft:wheat"
-    FIELD_MAP[#FIELD_MAP + 1] = "TConstruct:oreBerries"
-    FIELD_MAP[#FIELD_MAP + 1] = "minecraft:wheat"
-    FIELD_MAP[#FIELD_MAP + 1] = "minecraft:wheat"
-    FIELD_MAP[#FIELD_MAP + 1] = "harvestcraft:coffeebeanItem"
-    last_field = #FIELD_MAP
+    last_field = {}
+
+    tmp = {}
+    tmp[#tmp + 1] ="harvestcraft:lettuceItem"
+    tmp[#tmp + 1] ="harvestcraft:soybeanItem"
+    tmp[#tmp + 1] ="harvestcraft:tomatoItem"
+    tmp[#tmp + 1] ="minecraft:wheat"
+    tmp[#tmp + 1] ="TConstruct:oreBerries"
+    tmp[#tmp + 1] ="minecraft:wheat"
+    tmp[#tmp + 1] ="minecraft:wheat"
+    tmp[#tmp + 1] ="harvestcraft:coffeebeanItem"
+    FIELD_MAP[#FIELD_MAP + 1] = tmp
+
+    tmp = {}
+    tmp[#tmp + 1] ="harvestcraft:zucchiniItem"
+    tmp[#tmp + 1] ="harvestcraft:cabbageItem"
+    tmp[#tmp + 1] ="harvestcraft:tealeafItem"
+    tmp[#tmp + 1] ="harvestcraft:whitemushroomItem"
+    tmp[#tmp + 1] ="harvestcraft:cottonItem"
+    FIELD_MAP[#FIELD_MAP + 1] = tmp
+
+    last_field.y = #tmp
+    last_field.x = 2
 end
 
 function update()
@@ -584,51 +606,65 @@ function harvest_field(maxx, maxy, direction, plant)
     place_seeds(plant)
 end
 
-function go_base_to_fields()
+function go_base_to_fields(id)
     move.move(1, side.up)
     move.move(6, side.front)
+    if id == 2 then
+        move.move(21, side.left)
+    end
 end
 
-function go_fields_to_base()
+function go_fields_to_base(id)
+    if id == 2 then
+        move.move(21, side.right)
+    end
     move.move(6, side.back)
-    move.down()
+    move.move(1, side.down)
 end
 
 function get_next_field()
-    local tmp
+    local tmp = {}
 
-    tmp = last_field + 1
-    while tmp ~= last_field do
-        if tmp > #FIELD_MAP then
-            tmp = 1
+    tmp.x = last_field.x
+    tmp.y = last_field.y + 1
+    while tmp.y ~= last_field.y or tmp.x ~= last_field.x do
+        if tmp.y > #FIELD_MAP[tmp.x] then
+            tmp.y = 1
+            tmp.x = tmp.x + 1
+            if tmp.x > #FIELD_MAP then
+                tmp.x = 1
+            end
         end
-        if utilitie.is_elem_in_list(need_list, FIELD_MAP[tmp]) then
-            last_field = tmp
-            return tmp
+        if utilitie.is_elem_in_list(need_list, FIELD_MAP[tmp.x][tmp.y]) then
+            last_field.x = tmp.x
+            last_field.y = tmp.y
+            return last_field.x, last_field.y
         end
-        tmp = tmp + 1
+        tmp.y = tmp.y + 1
     end
-    if utilitie.is_elem_in_list(need_list, FIELD_MAP[tmp]) then
-        last_field = tmp
-        return tmp
+    if utilitie.is_elem_in_list(need_list, FIELD_MAP[tmp.x][tmp.y]) then
+        last_field.x = tmp.x
+        last_field.y = tmp.y
+        return last_field.x, last_field.y
     end
     return false
 end
 
 function harvest_next_field()
     local next_field
+    local id
 
-    next_field = get_next_field()
-    if not next_field then
+    id, next_field = get_next_field()
+    if not next_field or not id then
         return false
     end
-    go_base_to_fields()
+    go_base_to_fields(id)
     move.move(4 * (next_field - 1), side.up)
     move.move(2, side.front)
-    harvest_field(FIELD_X_SIZE, FIELD_Y_SIZE, FIELD_DIRECTION, FIELD_MAP[next_field])
+    harvest_field(FIELD_X_SIZE, FIELD_Y_SIZE, FIELD_DIRECTION, FIELD_MAP[id][next_field])
     move.move(2, side.back)
     move.move(4 * (next_field - 1), side.down)
-    go_fields_to_base()
+    go_fields_to_base(id)
     return true
 end
 
@@ -661,24 +697,30 @@ function move_chest_to_base(line_i, chest_i)
     move.move(1, side.down)
 end
 
-function get_chest_side(column, item)
+function get_chest_side(column, item, last_chest)
     local side_i
 
-    if column[side.up] and column[side.up] == item then
+    if not last_chest and column[side.up] and column[side.up] == item then
         return side.up
-    elseif column[side.down] and column[side.down] == item then
+    elseif (not last_chest or last_chest.side ~= side.down) and column[side.down] and column[side.down] == item then
         return side.down
     end
     return false
 end
 
-function get_chest_in_line(line, item)
+function get_chest_in_line(line, item, last_chest)
     local chest_i
     local side_i
 
     chest_i = 1
+    if last_chest then
+        chest_i = last_chest.chest
+    end
     while chest_i <= #line do
-        side_i = get_chest_side(line[chest_i], item)
+        if chest_i > last_chest.chest then
+            last_chest = nil
+        end
+        side_i = get_chest_side(line[chest_i], item, last_chest)
         if side_i then
             return chest_i, side_i
         end
@@ -687,15 +729,21 @@ function get_chest_in_line(line, item)
     return false
 end
 
-function get_chest(item)
+function get_chest(item, last_chest)
     local line_i
     local chest_i
     local side_i
     local i
 
     line_i = 1
+    if last_chest then
+        line_i = last_chest.line
+    end
     while line_i <= #CHEST_MAP do
-        chest_i, side_i = get_chest_in_line(CHEST_MAP[line_i], item)
+        if line_i > last_chest.chest then
+            last_chest = nil
+        end
+        chest_i, side_i = get_chest_in_line(CHEST_MAP[line_i], item, last_chest)
         if chest_i and side_i then
             return line_i, chest_i, side_i
         end
@@ -722,9 +770,38 @@ function get_item(item)
     return ret_val
 end
 
+function is_multiple_chests(item)
+    local amount
+    local tmpx
+    local tmpy
+    local tmpz
+    local last_chest = {}
+
+    amount = 0
+    tmpx, tmpy, tmpz = get_chest(item)
+    while tmpx and tmpy and tmpz do
+        last_chest.line = tmpx
+        last_chest.chest = tmpy
+        last_chest.side = tmpz
+        tmpx, tmpy, tmpz = get_chest(item, last_chest)
+        amount = amount + 1
+    end
+    if amount > 0 then
+        return amount
+    end
+    return false
+end
+
 function inventory_controll_chest(item, chest_side, drop, repack, update_need)
+    local tmp
+    local inv_map
+
     if drop then
-        chest.drop_item_to_chest(item, nil, nil, chest_side)
+        tmp = is_multiple_chests(item)
+        if tmp then
+            inv_map = inventory.get_inventory_map()
+            chest.drop_item_to_chest(item, nil, math.floor(inventory.item_amount(item, nil, inv_map) / tmp), chest_side, inv_map)
+        end
     end
     if repack then
         chest.repack_chest(chest_side)
