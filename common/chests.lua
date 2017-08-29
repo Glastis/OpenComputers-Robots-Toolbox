@@ -244,7 +244,7 @@ chest.drop = drop
 ----			false		if nothing moved
 --]]
 local function drop_item_to_chest(item, meta, amount, chest_side, inventory_map)
-	local slot = 1
+	local slot
     local tmpamount
 	local size
 
@@ -257,6 +257,7 @@ local function drop_item_to_chest(item, meta, amount, chest_side, inventory_map)
 	if not chest_side then
 		chest_side = side.front
     end
+    slot = 1
 	while slot <= size and (not amount or amount > 0) do
 		local data
 

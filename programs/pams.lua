@@ -50,32 +50,32 @@ function init()
 
     tmp = {}
     tmp[#tmp + 1] = {}
-    tmp[#tmp][side.up] = "harvestcraft:saltItem"
-    tmp[#tmp][side.down] = "harvestcraft:freshwaterItem"
+    tmp[#tmp][side.up] = 'harvestcraft:saltItem'
+    tmp[#tmp][side.down] = 'harvestcraft:freshwaterItem'
     tmp[#tmp + 1] = {}
-    tmp[#tmp][side.up] = "harvestcraft:soybeanItem"
-    tmp[#tmp][side.down] = "harvestcraft:lettuceItem"
+    tmp[#tmp][side.up] = 'harvestcraft:soybeanItem'
+    tmp[#tmp][side.down] = 'harvestcraft:lettuceItem'
     tmp[#tmp + 1] = {}
-    tmp[#tmp][side.up] = "harvestcraft:silkentofuItem"
-    tmp[#tmp][side.down] = "harvestcraft:soymilkItem"
+    tmp[#tmp][side.up] = 'harvestcraft:silkentofuItem'
+    tmp[#tmp][side.down] = 'harvestcraft:soymilkItem'
     tmp[#tmp + 1] = {}
-    tmp[#tmp][side.up] = "harvestcraft:firmtofuItem"
-    tmp[#tmp][side.down] = "minecraft:wheat_seeds"
+    tmp[#tmp][side.up] = 'harvestcraft:firmtofuItem'
+    tmp[#tmp][side.down] = 'minecraft:wheat_seeds'
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:cheeseItem'
-    tmp[#tmp][side.down] = "harvestcraft:hamburgerItem"
+    tmp[#tmp][side.down] = 'harvestcraft:hamburgerItem'
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:deluxecheeseburgerItem'
-    tmp[#tmp][side.down] = "harvestcraft:cheeseburgerItem"
+    tmp[#tmp][side.down] = 'harvestcraft:cheeseburgerItem'
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:friesItem'
     tmp[#tmp][side.down] = 'harvestcraft:whitemushroomItem'
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:zucchiniItem'
-    tmp[#tmp][side.down] = "harvestcraft:cabbageItem"
+    tmp[#tmp][side.down] = 'harvestcraft:cabbageItem'
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:tealeafItem'
-    tmp[#tmp][side.down] = "harvestcraft:cupofteaItem"
+    tmp[#tmp][side.down] = 'harvestcraft:cupofteaItem'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     tmp = {}
@@ -93,11 +93,12 @@ function init()
     tmp[#tmp][side.down] = "harvestcraft:tomatoItem"
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:coffeebeanItem'
-    tmp[#tmp][side.down] = "minecraft:bread"
+    tmp[#tmp][side.down] = 'minecraft:bread'
     tmp[#tmp + 1] = {}
-    tmp[#tmp][side.up] = "harvestcraft:cottonItem"
-    tmp[#tmp][side.down] = "harvestcraft:toastItem"
+    tmp[#tmp][side.up] = 'harvestcraft:cottonItem'
+    tmp[#tmp][side.down] = 'harvestcraft:toastItem'
     tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'harvestcraft:delightedmealItem'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     last_field = {}
@@ -717,7 +718,7 @@ function get_chest_in_line(line, item, last_chest)
         chest_i = last_chest.chest
     end
     while chest_i <= #line do
-        if chest_i > last_chest.chest then
+        if last_chest and chest_i > last_chest.chest then
             last_chest = nil
         end
         side_i = get_chest_side(line[chest_i], item, last_chest)
@@ -740,7 +741,7 @@ function get_chest(item, last_chest)
         line_i = last_chest.line
     end
     while line_i <= #CHEST_MAP do
-        if line_i > last_chest.chest then
+        if last_chest and line_i > last_chest.line then
             last_chest = nil
         end
         chest_i, side_i = get_chest_in_line(CHEST_MAP[line_i], item, last_chest)
@@ -792,15 +793,16 @@ function is_multiple_chests(item)
     return false
 end
 
-function inventory_controll_chest(item, chest_side, drop, repack, update_need)
+function inventory_controll_chest(item, chest_side, drop, repack, update_need, inv_map)
     local tmp
     local inv_map
 
     if drop then
         tmp = is_multiple_chests(item)
-        if tmp then
-            inv_map = inventory.get_inventory_map()
-            chest.drop_item_to_chest(item, nil, math.floor(inventory.item_amount(item, nil, inv_map) / tmp), chest_side, inv_map)
+        if tmp > 1 then
+            chest.drop_item_to_chest(item, nil, math.ceil(inventory.item_amount(item, nil, inv_map) / tmp), chest_side)
+        elseif tmp then
+            chest.drop_item_to_chest(item, nil, nil, chest_side)
         end
     end
     if repack then
@@ -815,21 +817,21 @@ function inventory_controll_chest(item, chest_side, drop, repack, update_need)
     end
 end
 
-function inventory_controll_case(case, drop, repack, update_need)
+function inventory_controll_case(case, drop, repack, update_need, inv_map)
     if case[side.up] then
-        inventory_controll_chest(case[side.up], side.up, drop, repack, update_need)
+        inventory_controll_chest(case[side.up], side.up, drop, repack, update_need, inv_map)
     end
     if case[side.down] then
-        inventory_controll_chest(case[side.down], side.down, drop, repack, update_need)
+        inventory_controll_chest(case[side.down], side.down, drop, repack, update_need, inv_map)
     end
 end
 
-function inventory_controll_line(line, drop, repack, update_need)
+function inventory_controll_line(line, drop, repack, update_need, inv_map)
     local i
 
     i = 1
     while i <= #line do
-        inventory_controll_case(line[i], drop, repack, update_need)
+        inventory_controll_case(line[i], drop, repack, update_need, inv_map)
         i = i + 1
         if i <= #line then
             move.move(1)
@@ -840,14 +842,16 @@ end
 
 function inventory_controll(drop, repack, update_need)
     local i
+    local inv_map
 
     i = 1
     move.move(1, side.up)
     move.move(6, side.front)
     move.move(2, side.left)
     move.move(1, side.front)
+    inv_map = inventory.get_inventory_map()
     while i <= #CHEST_MAP do
-        inventory_controll_line(CHEST_MAP[i], drop, repack, update_need)
+        inventory_controll_line(CHEST_MAP[i], drop, repack, update_need, inv_map)
         i = i + 1
         if i <= #CHEST_MAP then
             move.move(2, side.left)
