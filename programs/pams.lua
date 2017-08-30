@@ -5,13 +5,14 @@ local chest = require('chest')
 local inventory = require('inventory')
 local environement = require('environement')
 local crafting = require('crafting')
+local net = require('net')
 
 local component = require('component')
 local robot = require('robot')
 local side = require('sides')
 
-local PASTE_ID = 'KzP5EAya'
-local SCRIPT_NAME = 'foody'
+local PASTE_URL = 'https://pastebin.com/raw/KzP5EAya'
+local FILEPATH = 'foody'
 local FIELD_X_SIZE = 9
 local FIELD_Y_SIZE = 9
 local FIELD_DIRECTION = 'right'
@@ -27,7 +28,7 @@ local FIELD_MAP = {}
 local need_list = {}
 
 -- Will be harverst one time every FREQUENCY loop.
-local FREQUENCY_CHEST_DROP = 30
+local FREQUENCY_CHEST_DROP = 40
 local FREQUENCY_SALT = 4
 local FREQUENCY_WATER = 4
 local FREQUENCY_APPLE = 30
@@ -99,6 +100,7 @@ function init()
     tmp[#tmp][side.down] = 'harvestcraft:toastItem'
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:delightedmealItem'
+    tmp[#tmp][side.down] = 'harvestcraft:string'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     last_field = {}
@@ -127,8 +129,13 @@ function init()
 end
 
 function update()
-    os.execute('rm ' .. SCRIPT_NAME)
-    utilitie.download_file(PASTE_ID, SCRIPT_NAME, true)
+    print('Updating...')
+    if net.get_page_to_file(PASTE_URL, FILEPATH) then
+        print('Updated successfully.')
+        return true
+    end
+    print('Failed to update.')
+    return false
 end
 
 --[[
@@ -673,6 +680,20 @@ end
 ----    INVENTORY CONTROLL
 --]]
 
+function add_size_to_item_in_invmap(inv_map, item, amount)
+    local slot
+
+    slot = #inv_map
+    while slot >= 1 do
+        if inv_map[slot] and inv_map[slot].name == item then
+            inv_map[slot].size = inv_map[slot].size + amount
+            return inv_map
+        end
+        slot = slot - 1
+    end
+    return false
+end
+
 function check_inventory()
     if inventory.free_slots_amount() < 13 then
         inventory_controll(true)
@@ -794,14 +815,19 @@ function is_multiple_chests(item)
 end
 
 function inventory_controll_chest(item, chest_side, drop, repack, update_need, inv_map)
-    local tmp
-    local inv_map
+    local chest_amount
+    local item_to_drop
+    local retval
 
     if drop then
-        tmp = is_multiple_chests(item)
-        if tmp > 1 then
-            chest.drop_item_to_chest(item, nil, math.ceil(inventory.item_amount(item, nil, inv_map) / tmp), chest_side)
-        elseif tmp then
+        chest_amount = is_multiple_chests(item)
+        if chest_amount > 1 then
+            item_to_drop = math.ceil(inventory.item_amount(item, nil, inv_map) / chest_amount)
+            retval = chest.drop_item_to_chest(item, nil, item_to_drop, chest_side)
+            if not retval or retval ~= item_to_drop then
+                add_size_to_item_in_invmap(inv_map, item, inventory.item_amount(item, nil, inv_map))
+            end
+        elseif chest_amount then
             chest.drop_item_to_chest(item, nil, nil, chest_side)
         end
     end
@@ -866,13 +892,22 @@ end
 
 function garbage_all()
     local slot
+    local inv_map
+    local tmp
 
+    inv_map = inventory.get_inventory_map()
     move.move(1, side.up)
     move.move(1, side.right)
-    slot = robot.inventorySize()
+    slot = #inv_map
     while slot >= 1 do
-        robot.select(slot)
-        robot.dropDown()
+        if inv_map[slot] then
+            tmp = utilitie.is_elem_in_list(need_list, inv_map[slot].name)
+            if tmp then
+                table.remove(need_list, tmp)
+            end
+            robot.select(slot)
+            robot.dropDown()
+        end
         slot = slot - 1
     end
     move.move(1, side.left)

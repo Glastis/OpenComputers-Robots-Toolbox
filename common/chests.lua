@@ -240,21 +240,28 @@ chest.drop = drop
 ----			to_slot, 		optional, 	chest slot that will receive items. If no provided, then it will drop into the first empty/not fully stacked slot.
 ----			inventory_map, 	optional, 	will search into this table instead of inventory if provided.
 ----
-----	return: true		if at least one item was drop to chest
+----	return: amount		if at least one item was drop to chest, amount of moved items
 ----			false		if nothing moved
 --]]
 local function drop_item_to_chest(item, meta, amount, chest_side, inventory_map)
 	local slot
     local tmpamount
+    local retamount
 	local size
 
-	size = robot.inventorySize()
-	if inventory_map then
-		size = #inventory_map
-    elseif amount then
+	if amount and not inventory_map then
         inventory_map = inventory.get_inventory_map()
-	end
-	if not chest_side then
+        tmpamount = inventory.item_amount(item, meta, inventory_map)
+        if amount > tmpamount then
+            amount = tmpamount
+        end
+    end
+    size = robot.inventorySize()
+    retamount = 0
+    if inventory_map then
+        size = #inventory_map
+    end
+    if not chest_side then
 		chest_side = side.front
     end
     slot = 1
@@ -274,13 +281,14 @@ local function drop_item_to_chest(item, meta, amount, chest_side, inventory_map)
             elseif amount then
                 amount = amount - data.size
             end
+            retamount = retamount + tmpamount
             if not drop(chest_side, tmpamount, slot) then
                 return false
 			end
 		end
 		slot = slot + 1
 	end
-	return true
+	return retamount
 end
 chest.drop_item_to_chest = drop_item_to_chest
 
