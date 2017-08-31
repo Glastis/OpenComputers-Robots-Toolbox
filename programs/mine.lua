@@ -12,10 +12,12 @@ local side = require('sides')
 local redstone = component.redstone
 local generator = component.generator
 
+local WAIT_ITEM_IN_CHEST_SLEEP_TIME = 10
 local CRITICAL_ENERGY_PERCENT = 20
 local CRITICAL_ENERGY_LEVEL
 local ENERGY_CHECK_FREQ = 25
-local INVENTORY_CHECK_FREQ = 10
+local GENERATOR_CHECK_FREQ = 25
+local INVENTORY_CHECK_FREQ = 30
 local TOOL_ENERGY_FREQ = 200
 local EMPTY_LAST_SLOTS_BEFORE_FULL = 3
 local ENDERCHEST_INVENTORY_ID = 4082
@@ -31,6 +33,7 @@ local offset = {}
 local all_side = {}
 local energy_check_act
 local tool_check_act
+local generator_check_act
 local inventory_check_act
 
 --[[
@@ -39,9 +42,10 @@ local inventory_check_act
 
 function check_tool(force)
     local y
+    local dir
 
     if tool_check_act > TOOL_ENERGY_FREQ or force then
-        y = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_TOOL_RECHARGE_ID)
+        y, dir = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_TOOL_RECHARGE_ID)
         if y then
             inventory.unequip()
             inventory.select_item('TConstruct:pickaxe')
@@ -52,7 +56,7 @@ function check_tool(force)
             end
             inventory.equip('TConstruct:pickaxe')
             robot.swingDown()
-            move.move(y, side.up, true)
+            move.move(y, dir, true)
         end
         tool_check_act = 0
         return true
@@ -67,30 +71,34 @@ end
 
 function place_recharge_base()
     local y
+    local dir
 
-    y = place_bloc_down('ThermalExpansion:Tesseract')
+    y, dir = place_bloc_down('ThermalExpansion:Tesseract')
     if not y then
         return false
     end
     move.move(1, side.front, true)
     place_bloc_down('OpenComputers:charger')
-    return y
+    return y, dir
 end
 
-function remove_recharge_base(y)
+function remove_recharge_base(y, dir)
     robot.swingDown()
     move.move(1, side.back, true)
     robot.swingDown()
-    move.move(y, side.up)
+    move.move(y, dir)
 end
 
 function activate_charger()
     redstone.setOutput(side.down, 0)
+    os.sleep(0.5)
     redstone.setOutput(side.down, 15)
+    os.sleep(1)
 end
 
 function go_recharging()
     local y
+    local dir
     local needs = {}
 
     needs[#needs + 1] = {}
@@ -99,13 +107,26 @@ function go_recharging()
     needs[#needs]['name']  = 'ThermalExpansion:Tesseract'
 
     get_item_from_enderchest_inventory(needs)
-    y = place_recharge_base()
+    y, dir = place_recharge_base()
     redstone.setOutput(side.down, 15)
     energy.wait_charging(activate_charger)
     redstone.setOutput(side.down, 0)
-    remove_recharge_base(y)
+    remove_recharge_base(y, dir)
     place_item_to_enderchest_inventory(needs)
     robot.select(1)
+end
+
+function check_generator(force)
+    if generator_check_act < GENERATOR_CHECK_FREQ and not force then
+        generator_check_act = generator_check_act + 1
+        return false
+    end
+    if generator.count == 0 and inventory.select_fuel() then
+        generator.insert()
+        robot.select(1)
+    end
+    generator_check_act = 0
+    return true
 end
 
 function check_energy(force)
@@ -114,11 +135,6 @@ function check_energy(force)
         return false
     end
     if energy.get_level() < CRITICAL_ENERGY_LEVEL or force then
-        if generator.count == 0 and inventory.select_fuel() then
-            generator.insert()
-            robot.select(1)
-        end
-        check_inventory()
         go_recharging()
     end
     energy_check_act = 0
@@ -166,16 +182,17 @@ end
 
 function check_inventory(force)
     local i
+    local dir
 
     if inventory_check_act > INVENTORY_CHECK_FREQ or force then
         if last_slots_filled() or force then
-            i = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_DROP_ID)
+            i, dir = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_DROP_ID)
             if i then
                 drop_inventory()
             end
             robot.select(1)
             robot.swingDown()
-            move.move(i, side.up, true)
+            move.move(i, dir, true)
         end
         inventory_check_act = 0
         return true
@@ -187,32 +204,32 @@ end
 function get_item_from_enderchest_inventory(item_list)
     local i
     local y
-    local retval
+    local dir
 
-    retval = true
-    y = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_INVENTORY_ID)
+    y, dir = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_INVENTORY_ID)
     if not y then
         return false
     end
     i = 1
     while i <= #item_list do
-        if not chest.get_item_from_chest(item_list[i]['name'], item_list[i]['id'], nil, side.down) then
-            retval = false
+        while not chest.get_item_from_chest(item_list[i]['name'], item_list[i]['id'], nil, side.down) do
+            os.sleep(WAIT_ITEM_IN_CHEST_SLEEP_TIME)
         end
         i = i + 1
     end
     robot.swingDown()
-    move.move(y, side.up, true)
-    return retval
+    move.move(y, dir, true)
+    return true
 end
 
 function place_item_to_enderchest_inventory(item_list)
     local i
     local y
+    local dir
     local retval
 
     retval = true
-    y = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_INVENTORY_ID)
+    y, dir = place_bloc_down('EnderStorage:enderChest', ENDERCHEST_INVENTORY_ID)
     if not y then
         return false
     end
@@ -226,7 +243,7 @@ function place_item_to_enderchest_inventory(item_list)
         i = i + 1
     end
     robot.swingDown()
-    move.move(y, side.up, true)
+    move.move(y, dir, true)
     robot.select(1)
     return retval
 end
@@ -235,24 +252,49 @@ end
 ----    ENVIRONEMENT
 --]]
 
+function check_place_block_down()
+    if environement.get_bloc(side.up) == 'minecraft:bedrock' then
+        return false
+    end
+    if environement.get_bloc(side.down) == 'minecraft:bedrock' or environement.get_bloc(side.front) == 'minecraft:bedrock' then
+        return side.up
+    end
+    move.move(1, side.front, true)
+    if environement.get_bloc(side.up) == 'minecraft:bedrock' then
+        move.move(1, side.back, true)
+        return false
+    end
+    if environement.get_bloc(side.down) == 'minecraft:bedrock' or environement.get_bloc(side.front) == 'minecraft:bedrock' then
+        move.move(1, side.back, true)
+        return side.up
+    end
+    move.move(1, side.back, true)
+    return side.down
+end
+
 function place_bloc_down(name, meta)
     local i
+    local movement
 
     i = 0
     if not inventory.select_item(name, meta) then
+        return false
+    end
+    movement = check_place_block_down()
+    if not movement then
         return false
     end
     while not robot.placeDown() do
         robot.swingDown()
         if robot.placeDown() then
             robot.select(1)
-            return i
+            return i, movement
         end
-        move.move(1, side.down, true)
+        move.move(1, movement, true)
         i = i + 1
     end
     robot.select(1)
-    return i
+    return i, move.get_orientation_revert(movement)
 end
 
 function check_ore(from_side)
@@ -260,9 +302,9 @@ function check_ore(from_side)
     local tmp
     local ore_side = {}
 
-    i = 0
-    while i < #all_side do
-        if not from_side or (all_side[i] ~= from_side) then
+    i = 1
+    while i <= #all_side do
+        if not from_side or from_side ~= all_side[i] then
             tmp = environement.get_bloc(all_side[i])
             if tmp and not utilitie.is_elem_in_list(garbage_list, tmp) then
                 ore_side[#ore_side + 1] = all_side[i]
@@ -271,6 +313,25 @@ function check_ore(from_side)
         i = i + 1
     end
     return ore_side
+end
+
+function extract_ore_pure_recur(from_side)
+    local i
+    local tmp
+
+    i = 1
+    while i <= #all_side do
+        if not from_side or all_side[i] ~= from_side then
+            tmp = environement.get_bloc(all_side[i])
+            if tmp and not utilitie.is_elem_in_list(garbage_list, tmp) then
+                move.move(1, all_side[i], true)
+                check_all_status()
+                extract_ore_pure_recur(move.get_orientation_revert(all_side[i]))
+                move.move(1, move.get_orientation_revert(all_side[i]), true)
+            end
+        end
+        i = i + 1
+    end
 end
 
 function extract_ore(from_side, offset_rec)
@@ -376,13 +437,13 @@ end
 function move_and_extract(len, dir)
     while len > 0 do
         move.move(1, dir, true)
-        extract_ore(move.get_orientation_revert(dir))
+        extract_ore_pure_recur(move.get_orientation_revert(dir))
         len = len - 1
     end
 end
 
 function case()
-    extract_ore(side.back)
+    extract_ore_pure_recur(side.back)
     if offset.y > 0 then
         move_and_extract(2, side.down)
         offset.y = offset.y - 2
@@ -392,7 +453,7 @@ function case()
     else
         move_and_extract(1, side.up)
         move.move(2, side.down, true)
-        extract_ore(side.up)
+        extract_ore_pure_recur(side.up)
         offset.y = offset.y - 1
     end
 end
@@ -432,6 +493,7 @@ end
 --]]
 
 function check_all_status(force)
+    check_generator(force)
     check_inventory(force)
     check_tool(force)
     check_energy(force)
@@ -445,6 +507,7 @@ function init()
     energy_check_act = 0
     tool_check_act = 0
     inventory_check_act = 0
+    generator_check_act = 0
 
     all_side[#all_side + 1] = side.front
     all_side[#all_side + 1] = side.up
@@ -469,6 +532,13 @@ function init()
     garbage_list[#garbage_list + 1] = 'minecraft:netherrack'
     garbage_list[#garbage_list + 1] = 'minecraft:netherbrick'
     garbage_list[#garbage_list + 1] = 'minecraft:nether_brick'
+    garbage_list[#garbage_list + 1] = 'minecraft:grass'
+    garbage_list[#garbage_list + 1] = 'minecraft:bedrock'
+    garbage_list[#garbage_list + 1] = 'minecraft:ladder'
+    garbage_list[#garbage_list + 1] = 'minecraft:torch'
+    garbage_list[#garbage_list + 1] = 'minecraft:sand'
+    garbage_list[#garbage_list + 1] = 'TConstruct:decoration.stonetorch'
+    garbage_list[#garbage_list + 1] = 'TConstruct:decoration.stoneladder'
 
     keep_list[#keep_list + 1] = 'TConstruct:pickaxe'
     keep_list[#keep_list + 1] = 'EnderStorage:enderChest'
