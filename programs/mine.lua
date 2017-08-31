@@ -90,10 +90,14 @@ function remove_recharge_base(y, dir)
 end
 
 function activate_charger()
-    redstone.setOutput(side.down, 0)
-    os.sleep(0.5)
-    redstone.setOutput(side.down, 15)
-    os.sleep(1)
+    if not inventory.equip('ThermalExpansion:wrench') then
+        return false
+    end
+    robot.useDown()
+    if not inventory.equip('TConstruct:pickaxe') then
+        return false
+    end
+    return true
 end
 
 function go_recharging()
@@ -105,11 +109,14 @@ function go_recharging()
     needs[#needs]['name'] = 'OpenComputers:charger'
     needs[#needs + 1] = {}
     needs[#needs]['name']  = 'ThermalExpansion:Tesseract'
+    needs[#needs + 1] = {}
+    needs[#needs]['name']  = 'ThermalExpansion:wrench'
 
     get_item_from_enderchest_inventory(needs)
     y, dir = place_recharge_base()
+    activate_charger()
     redstone.setOutput(side.down, 15)
-    energy.wait_charging(activate_charger)
+    energy.wait_charging()
     redstone.setOutput(side.down, 0)
     remove_recharge_base(y, dir)
     place_item_to_enderchest_inventory(needs)
@@ -213,6 +220,7 @@ function get_item_from_enderchest_inventory(item_list)
     i = 1
     while i <= #item_list do
         while not chest.get_item_from_chest(item_list[i]['name'], item_list[i]['id'], nil, side.down) do
+            print(tostring(item_list[i]['name']) .. ' not found in chest.')
             os.sleep(WAIT_ITEM_IN_CHEST_SLEEP_TIME)
         end
         i = i + 1
