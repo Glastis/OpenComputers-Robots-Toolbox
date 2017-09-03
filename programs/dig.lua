@@ -2,6 +2,7 @@ local move = require('movement')
 local energy = require('energy')
 local inventory = require('inventory')
 local computer = require('computer')
+local utilitie = require('utilities')
 local net = require('net')
 
 local component = require('component')
@@ -18,6 +19,7 @@ local FILEPATH = 'dig'
 
 
 local offset = {}
+local garbage = {}
 local check_fuel_act = CHECK_INV_FREQ
 local check_inv_act = 0
 
@@ -86,7 +88,7 @@ function drop_all(inv_map)
     end
     while i <= #inv_map do
         robot.select(i)
-        if inv_map[i].name == 'minecraft:cobblestone' then
+        if utilitie.is_elem_in_list(garbage, inv_map[i].name) then
             robot.dropDown()
         elseif inv_map[i].name ~= 'ExtraUtilities:destructionpickaxe' then
             robot.drop()
@@ -214,6 +216,11 @@ function init()
     offset.y = 0
     offset.z = 0
     offset.side = dir[arg[4]]
+
+    garbage[#garbage + 1] = 'minecraft:cobblestone'
+    garbage[#garbage + 1] = 'minecraft:stone'
+    garbage[#garbage + 1] = 'chisel:concrete'
+    garbage[#garbage + 1] = 'minecraft:gravel'
 end
 
 function core()

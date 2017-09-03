@@ -10,13 +10,13 @@ local component = require('component')
 local robot = require('robot')
 local side = require('sides')
 local redstone = component.redstone
-local generator = component.generator
+--local generator = component.generator
 
 local WAIT_ITEM_IN_CHEST_SLEEP_TIME = 10
-local CRITICAL_ENERGY_PERCENT = 20
+local CRITICAL_ENERGY_PERCENT = 40
 local CRITICAL_ENERGY_LEVEL
 local ENERGY_CHECK_FREQ = 25
-local GENERATOR_CHECK_FREQ = 25
+--local GENERATOR_CHECK_FREQ = 25
 local INVENTORY_CHECK_FREQ = 30
 local TOOL_ENERGY_FREQ = 200
 local EMPTY_LAST_SLOTS_BEFORE_FULL = 3
@@ -33,7 +33,7 @@ local offset = {}
 local all_side = {}
 local energy_check_act
 local tool_check_act
-local generator_check_act
+--local generator_check_act
 local inventory_check_act
 
 --[[
@@ -73,12 +73,12 @@ function place_recharge_base()
     local y
     local dir
 
-    y, dir = place_bloc_down('ThermalExpansion:Tesseract')
+    y, dir = place_bloc_down('ThermalExpansion:Tesseract', nil, true)
     if not y then
         return false
     end
     move.move(1, side.front, true)
-    place_bloc_down('OpenComputers:charger')
+    place_bloc_down('OpenComputers:charger', nil, nil, side.front)
     return y, dir
 end
 
@@ -89,14 +89,41 @@ function remove_recharge_base(y, dir)
     move.move(y, dir)
 end
 
+function equip_thing(item)
+    while not inventory.equip(item) do
+        print('ERROR: Can\'t equip ' .. item)
+        os.sleep(WAIT_ITEM_IN_CHEST_SLEEP_TIME)
+    end
+end
+
 function activate_charger()
-    if not inventory.equip('ThermalExpansion:wrench') then
-        return false
+    local oldenergy
+    local i
+
+    i = 1
+    equip_thing('ThermalExpansion:wrench')
+    oldenergy = energy.get_level()
+    robot.useDown(nil, true)
+    os.sleep(5)
+    while oldenergy >= energy.get_level() do
+        print('No energy from charger.')
+        while all_side[i] == side.up or all_side[i] == side.front  or all_side[i] == side.down do
+            i = i + 1
+        end
+        if i > #all_side then
+            return false
+        end
+        equip_thing('TConstruct:pickaxe')
+        robot.swingDown()
+        move.move_orientation(all_side[i])
+        place_bloc_down('OpenComputers:charger', nil, nil, side.front)
+        equip_thing('ThermalExpansion:wrench')
+        robot.useDown(side.front, true)
+        move.move_orientation_revert(all_side[i])
+        os.sleep(5)
+        i = i + 1
     end
-    robot.useDown()
-    if not inventory.equip('TConstruct:pickaxe') then
-        return false
-    end
+    equip_thing('TConstruct:pickaxe')
     return true
 end
 
@@ -115,26 +142,24 @@ function go_recharging()
     get_item_from_enderchest_inventory(needs)
     y, dir = place_recharge_base()
     activate_charger()
-    redstone.setOutput(side.down, 15)
     energy.wait_charging()
-    redstone.setOutput(side.down, 0)
     remove_recharge_base(y, dir)
     place_item_to_enderchest_inventory(needs)
     robot.select(1)
 end
 
-function check_generator(force)
-    if generator_check_act < GENERATOR_CHECK_FREQ and not force then
-        generator_check_act = generator_check_act + 1
-        return false
-    end
-    if generator.count == 0 and inventory.select_fuel() then
-        generator.insert()
-        robot.select(1)
-    end
-    generator_check_act = 0
-    return true
-end
+--function check_generator(force)
+--    if generator_check_act < GENERATOR_CHECK_FREQ and not force then
+--        generator_check_act = generator_check_act + 1
+--        return false
+--    end
+--    if generator.count == 0 and inventory.select_fuel() then
+--        generator.insert()
+--        robot.select(1)
+--    end
+--    generator_check_act = 0
+--    return true
+--end
 
 function check_energy(force)
     if energy_check_act < ENERGY_CHECK_FREQ and not force then
@@ -142,6 +167,7 @@ function check_energy(force)
         return false
     end
     if energy.get_level() < CRITICAL_ENERGY_LEVEL or force then
+        check_inventory(force)
         go_recharging()
     end
     energy_check_act = 0
@@ -260,27 +286,29 @@ end
 ----    ENVIRONEMENT
 --]]
 
-function check_place_block_down()
+function check_place_block_down(energy_p)
     if environement.get_bloc(side.up) == 'minecraft:bedrock' then
         return false
     end
     if environement.get_bloc(side.down) == 'minecraft:bedrock' or environement.get_bloc(side.front) == 'minecraft:bedrock' then
         return side.up
     end
-    move.move(1, side.front, true)
-    if environement.get_bloc(side.up) == 'minecraft:bedrock' then
+    if energy_p then
+        move.move(1, side.front, true)
+        if environement.get_bloc(side.up) == 'minecraft:bedrock' then
+            move.move(1, side.back, true)
+            return false
+        end
+        if environement.get_bloc(side.down) == 'minecraft:bedrock' or environement.get_bloc(side.front) == 'minecraft:bedrock' then
+            move.move(1, side.back, true)
+            return side.up
+        end
         move.move(1, side.back, true)
-        return false
     end
-    if environement.get_bloc(side.down) == 'minecraft:bedrock' or environement.get_bloc(side.front) == 'minecraft:bedrock' then
-        move.move(1, side.back, true)
-        return side.up
-    end
-    move.move(1, side.back, true)
     return side.down
 end
 
-function place_bloc_down(name, meta)
+function place_bloc_down(name, meta, energy_p, dir)
     local i
     local movement
 
@@ -288,13 +316,13 @@ function place_bloc_down(name, meta)
     if not inventory.select_item(name, meta) then
         return false
     end
-    movement = check_place_block_down()
+    movement = check_place_block_down(energy_p)
     if not movement then
         return false
     end
-    while not robot.placeDown() do
+    while not robot.placeDown(dir) do
         robot.swingDown()
-        if robot.placeDown() then
+        if robot.placeDown(dir) then
             robot.select(1)
             return i, movement
         end
@@ -333,7 +361,7 @@ function extract_ore_pure_recur(from_side)
             tmp = environement.get_bloc(all_side[i])
             if tmp and not utilitie.is_elem_in_list(garbage_list, tmp) then
                 move.move(1, all_side[i], true)
-                check_all_status()
+                check_all_status(true)
                 extract_ore_pure_recur(move.get_orientation_revert(all_side[i]))
                 move.move(1, move.get_orientation_revert(all_side[i]), true)
             end
@@ -466,22 +494,22 @@ function case()
     end
 end
 
-function line(max)
+function line(max, energy_p)
     case()
     while offset.x < max do
         move.move(1, side.front, true)
         offset.x = offset.x + 1
         case()
-        check_all_status()
+        check_all_status(energy_p)
     end
 end
 
 function core(len, amount, dir)
     dir = not dir
-    check_all_status(true)
+    check_all_status(true, true)
     while amount > 0 do
         offset.x = 0
-        line(len)
+        line(len, true)
         move.turn_bool(dir)
         offset.x = 0
         line(3)
@@ -500,11 +528,13 @@ end
 ----    MAIN
 --]]
 
-function check_all_status(force)
-    check_generator(force)
+function check_all_status(energy_p, force)
+--    check_generator(force)
     check_inventory(force)
     check_tool(force)
-    check_energy(force)
+--    if energy_p then
+        check_energy(force)
+--    end
 end
 
 function init()
@@ -515,7 +545,7 @@ function init()
     energy_check_act = 0
     tool_check_act = 0
     inventory_check_act = 0
-    generator_check_act = 0
+--    generator_check_act = 0
 
     all_side[#all_side + 1] = side.front
     all_side[#all_side + 1] = side.up
@@ -552,6 +582,7 @@ function init()
     keep_list[#keep_list + 1] = 'EnderStorage:enderChest'
     keep_list[#keep_list + 1] = 'OpenComputers:charger'
     keep_list[#keep_list + 1] = 'ThermalExpansion:Tesseract'
+    keep_list[#keep_list + 1] = 'ThermalExpansion:wrench'
 
     CRITICAL_ENERGY_LEVEL = math.floor((energy.get_max_energy() * CRITICAL_ENERGY_PERCENT) / 100)
 end
@@ -574,11 +605,10 @@ function get_user_args()
     else
         dir = "right"
     end
-    dir = false
     if dir == "left" then
-        dir = true
+        return len, amount, true
     end
-    return len, amount, dir
+    return len, amount, false
 end
 
 function update()
