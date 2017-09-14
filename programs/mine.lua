@@ -78,7 +78,7 @@ function place_recharge_base()
         return false
     end
     move.move(1, side.front, true)
-    place_bloc_down('OpenComputers:charger', nil, nil, side.front)
+    place_bloc_down('OpenComputers:charger', nil, nil, side.front, true)
     return y, dir
 end
 
@@ -116,7 +116,7 @@ function activate_charger()
         equip_thing('TConstruct:pickaxe')
         robot.swingDown()
         move.move_orientation(all_side[i])
-        place_bloc_down('OpenComputers:charger', nil, nil, side.front)
+        place_bloc_down('OpenComputers:charger', nil, nil, side.front, true)
         equip_thing('ThermalExpansion:wrench')
         robot.useDown(side.front, true)
         move.move_orientation_revert(all_side[i])
@@ -308,7 +308,7 @@ function check_place_block_down(energy_p)
     return side.down
 end
 
-function place_bloc_down(name, meta, energy_p, dir)
+function place_bloc_down(name, meta, energy_p, dir, nomove)
     local i
     local movement
 
@@ -316,7 +316,11 @@ function place_bloc_down(name, meta, energy_p, dir)
     if not inventory.select_item(name, meta) then
         return false
     end
-    movement = check_place_block_down(energy_p)
+
+    movement = side.down
+    if not nomove then
+        movement = check_place_block_down(energy_p)
+    end
     if not movement then
         return false
     end
@@ -324,10 +328,12 @@ function place_bloc_down(name, meta, energy_p, dir)
         robot.swingDown()
         if robot.placeDown(dir) then
             robot.select(1)
-            return i, movement
+            return i, move.get_orientation_revert(movement)
         end
-        move.move(1, movement, true)
-        i = i + 1
+        if not nomove then
+            move.move(1, movement, true)
+            i = i + 1
+        end
     end
     robot.select(1)
     return i, move.get_orientation_revert(movement)

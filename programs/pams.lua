@@ -25,6 +25,7 @@ local args = {... }
 
 local CHEST_MAP = {}
 local FIELD_MAP = {}
+local PLANT_SEED = {}
 local need_list = {}
 
 -- Will be harverst one time every FREQUENCY loop.
@@ -36,6 +37,8 @@ local FREQUENCY_BREAD = 10
 local FREQUENCY_DOUGHT = 10
 local FREQUENCY_FLOUR = 10
 local FREQUENCY_TOAST = 10
+local FREQUENCY_STRING = 30
+local FREQUENCY_WOOL = 60
 local FREQUENCY_MILK_TOFU = 20
 local FREQUENCY_SILKEN_TOFU = 20
 local FREQUENCY_HAMBURGER = 25
@@ -77,6 +80,9 @@ function init()
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:tealeafItem'
     tmp[#tmp][side.down] = 'harvestcraft:cupofteaItem'
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'minecraft:ender_pearl'
+    tmp[#tmp][side.down] = 'ExtraUtilities:plant/ender_lilly'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     tmp = {}
@@ -100,8 +106,11 @@ function init()
     tmp[#tmp][side.down] = 'harvestcraft:toastItem'
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:delightedmealItem'
-    tmp[#tmp][side.down] = 'harvestcraft:string'
+    tmp[#tmp][side.down] = 'minecraft:string'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
+
+    PLANT_SEED['minecraft:wheat'] = 'minecraft:wheat_seeds'
+    PLANT_SEED['minecraft:ender_pearl'] = 'ExtraUtilities:plant/ender_lilly'
 
     last_field = {}
 
@@ -122,10 +131,11 @@ function init()
     tmp[#tmp + 1] ="harvestcraft:tealeafItem"
     tmp[#tmp + 1] ="harvestcraft:whitemushroomItem"
     tmp[#tmp + 1] ="harvestcraft:cottonItem"
+    tmp[#tmp + 1] ="minecraft:ender_pearl"
     FIELD_MAP[#FIELD_MAP + 1] = tmp
 
     last_field.y = #tmp
-    last_field.x = 2
+    last_field.x = #FIELD_MAP
 end
 
 function update()
@@ -201,6 +211,46 @@ function harvest_apples()
     move.move(4, side.left)
     return true
 end
+
+--[[
+----    MATERIALS PRODUCTION
+--]]
+
+function make_string()
+    local ingredient = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:cottonItem'
+    ingredient[#ingredient]['slot'] = 1
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:cottonItem'
+    ingredient[#ingredient]['slot'] = 2
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'harvestcraft:cottonItem'
+    ingredient[#ingredient]['slot'] = 4
+
+    return make('harvestcraft:hamburgerItem', ingredient, tool)
+end
+
+function make_wool()
+    local ingredient = {}
+
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'minecraft:string'
+    ingredient[#ingredient]['slot'] = 1
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'minecraft:string'
+    ingredient[#ingredient]['slot'] = 2
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'minecraft:string'
+    ingredient[#ingredient]['slot'] = 4
+    ingredient[#ingredient + 1] = {}
+    ingredient[#ingredient]['item'] = 'minecraft:string'
+    ingredient[#ingredient]['slot'] = 5
+
+    return make('harvestcraft:hamburgerItem', ingredient, tool)
+end
+
 
 --[[
 ----    BURGERS PRODUCTION
@@ -538,13 +588,13 @@ end
 --]]
 
 function harvest_plant(plant)
-    if plant and plant == "minecraft:wheat" then
+    if plant and PLANT_SEED[plant] then
         local data
 
         if environement.get_bloc_meta(side.down) == 7 then
             robot.swingDown()
         end
-        if inventory.select_item('minecraft:wheat_seeds') then
+        if inventory.select_item(PLANT_SEED[plant]) then
             robot.placeDown()
         end
     else
@@ -553,19 +603,19 @@ function harvest_plant(plant)
 end
 
 function check_seeds(plant)
-    if plant and plant == 'minecraft:wheat' then
+    if plant and PLANT_SEED[plant] then
         robot.turnLeft()
-        chest.get_item_from_chest('minecraft:wheat_seeds')
+        chest.get_item_from_chest(PLANT_SEED[plant])
         robot.turnRight()
     end
     return true
 end
 
 function place_seeds(plant)
-    if plant and plant == 'minecraft:wheat' then
+    if plant and PLANT_SEED[plant] then
         robot.turnLeft()
-        if not chest.drop_item_to_chest('minecraft:wheat_seeds') then
-            inventory.repack_item('minecraft:wheat_seeds')
+        if not chest.drop_item_to_chest(PLANT_SEED[plant]) then
+            inventory.repack_item(PLANT_SEED[plant])
         end
         robot.turnRight()
     end
@@ -1027,6 +1077,14 @@ end
 ----    OTHER
 --]]
 
+function check_action_part(frequency_iter, frequency_part, action, param)
+    if frequency_iter % frequency_part == 0 then
+        energy.wait_charging()
+
+        check_inventory()
+    end
+end
+
 function check_actions(frequency_iter)
     if frequency_iter % FREQUENCY_CHEST_DROP == 0 then
         energy.wait_charging()
@@ -1092,6 +1150,16 @@ function check_actions(frequency_iter)
     if frequency_iter % FREQUENCY_BREAD == 0 then
         energy.wait_charging()
         bake_dough()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_TOAST == 0 then
+        energy.wait_charging()
+        make_toast()
+        check_inventory()
+    end
+    if frequency_iter % FREQUENCY_WOOL == 0 then
+        energy.wait_charging()
+        make_toast()
         check_inventory()
     end
     if frequency_iter % FREQUENCY_TOAST == 0 then

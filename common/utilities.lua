@@ -96,6 +96,32 @@ local function split(str, separator)
 end
 utilities.split = split
 
+local function exec_function_table(actions, param)
+	local i
+
+	i = 1
+	if not param then
+		param = {}
+	end
+	while i <= #actions do
+		actions[i](param[i])
+		i = i + 1
+	end
+end
+
+local function exec_function_table_revert(actions, param)
+	local i
+
+	i = #actions
+	if not param then
+		param = {}
+	end
+	while i > 0 do
+		actions[i](param[i])
+		i = i - 1
+	end
+end
+
 local function debug_info(more, calltrace)
 	if not more then
 		more = " "
