@@ -49,6 +49,18 @@ local function is_elem_in_list(list, elem)
 end
 utilities.is_elem_in_list = is_elem_in_list
 
+local function concatenate_arrays(t1, t2)
+	local i
+
+	i = 1
+	while i <= #t2 do
+		t1[#t1 + 1] = t2[i]
+		i = i + 1
+	end
+	return t1
+end
+utilities.concatenate_arrays = concatenate_arrays
+
 local function file_exists(filepath)
 	local f
 
@@ -108,6 +120,7 @@ local function exec_function_table(actions, param)
 		i = i + 1
 	end
 end
+utilities.exec_function_table = exec_function_table
 
 local function exec_function_table_revert(actions, param)
 	local i
@@ -121,6 +134,7 @@ local function exec_function_table_revert(actions, param)
 		i = i - 1
 	end
 end
+utilities.exec_function_table_revert = exec_function_table_revert
 
 local function debug_info(more, calltrace)
 	if not more then
@@ -153,5 +167,19 @@ local function var_dump(var)
 	return tostring(var)
 end
 utilities.var_dump = var_dump
+
+local function round(number, decimals, ext_abs)
+	if ext_abs then
+		ext_abs = math.floor
+	else
+		ext_abs = math.ceil
+	end
+	if not decimals then
+		return ext_abs(number)
+	end
+	decimals = 10 ^ decimals
+	return ext_abs(number * decimals) / decimals
+end
+utilities.round = round
 
 return utilities

@@ -571,6 +571,7 @@ function init()
     garbage_list[#garbage_list + 1] = 'minecraft:water'
     garbage_list[#garbage_list + 1] = 'minecraft:cobblestone'
     garbage_list[#garbage_list + 1] = 'minecraft:flowing_lava'
+    garbage_list[#garbage_list + 1] = 'minecraft:lava'
     garbage_list[#garbage_list + 1] = 'minecraft:mossy_cobblestone'
     garbage_list[#garbage_list + 1] = 'minecraft:nether_brick_stairs'
     garbage_list[#garbage_list + 1] = 'minecraft:netherrack'
@@ -583,6 +584,7 @@ function init()
     garbage_list[#garbage_list + 1] = 'minecraft:sand'
     garbage_list[#garbage_list + 1] = 'TConstruct:decoration.stonetorch'
     garbage_list[#garbage_list + 1] = 'TConstruct:decoration.stoneladder'
+    garbage_list[#garbage_list + 1] = 'BuildCraft|Energy:blockOil'
 
     keep_list[#keep_list + 1] = 'TConstruct:pickaxe'
     keep_list[#keep_list + 1] = 'EnderStorage:enderChest'

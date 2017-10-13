@@ -83,6 +83,8 @@ function init()
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'minecraft:ender_pearl'
     tmp[#tmp][side.down] = 'ExtraUtilities:plant/ender_lilly'
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.up] = 'minecraft:ender_pearl'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     tmp = {}
@@ -107,6 +109,8 @@ function init()
     tmp[#tmp + 1] = {}
     tmp[#tmp][side.up] = 'harvestcraft:delightedmealItem'
     tmp[#tmp][side.down] = 'minecraft:string'
+    tmp[#tmp + 1] = {}
+    tmp[#tmp][side.down] = 'minecraft:wool'
     CHEST_MAP[#CHEST_MAP + 1] = tmp
 
     PLANT_SEED['minecraft:wheat'] = 'minecraft:wheat_seeds'
@@ -1080,7 +1084,7 @@ end
 function check_action_part(frequency_iter, frequency_part, action, param)
     if frequency_iter % frequency_part == 0 then
         energy.wait_charging()
-
+        action(param)
         check_inventory()
     end
 end
@@ -1092,86 +1096,22 @@ function check_actions(frequency_iter)
         print('Needed ressources: ' .. utilitie.var_dump(need_list))
         garbage_all()
     end
-    if frequency_iter % FREQUENCY_SALT == 0 then
-        energy.wait_charging()
-        make_salt()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_WATER == 0 then
-        energy.wait_charging()
-        make_water()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_FLOUR == 0 then
-        energy.wait_charging()
-        make_flour()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_DOUGHT == 0 then
-        energy.wait_charging()
-        make_dough()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_DELUXECHEESEBURGER == 0 then
-        energy.wait_charging()
-        make_delightedmeal()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_DELUXECHEESEBURGER == 0 then
-        energy.wait_charging()
-        make_deluxecheeseburger()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_CHEESEBURGER == 0 then
-        energy.wait_charging()
-        make_cheeseburger()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_HAMBURGER == 0 then
-        energy.wait_charging()
-        make_hamburger()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_CHEESE == 0 then
-        energy.wait_charging()
-        make_cheese()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_SILKEN_TOFU == 0 then
-        energy.wait_charging()
-        make_silken_tofu()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_MILK_TOFU == 0 then
-        energy.wait_charging()
-        make_milk_and_tofu()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_BREAD == 0 then
-        energy.wait_charging()
-        bake_dough()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_TOAST == 0 then
-        energy.wait_charging()
-        make_toast()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_WOOL == 0 then
-        energy.wait_charging()
-        make_toast()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_TOAST == 0 then
-        energy.wait_charging()
-        make_toast()
-        check_inventory()
-    end
-    if frequency_iter % FREQUENCY_APPLE == 0 then
-        energy.wait_charging()
-        harvest_apples()
-        check_inventory()
-    end
+    check_action_part(frequency_iter, FREQUENCY_SALT, make_salt)
+    check_action_part(frequency_iter, FREQUENCY_WATER, make_water)
+    check_action_part(frequency_iter, FREQUENCY_FLOUR, make_flour)
+    check_action_part(frequency_iter, FREQUENCY_DOUGHT, make_dough)
+    check_action_part(frequency_iter, FREQUENCY_DELUXECHEESEBURGER, make_deluxecheeseburger)
+    check_action_part(frequency_iter, FREQUENCY_DELIGHTEDMEAL, make_delightedmeal)
+    check_action_part(frequency_iter, FREQUENCY_CHEESEBURGER, make_cheeseburger)
+    check_action_part(frequency_iter, FREQUENCY_HAMBURGER, make_hamburger)
+    check_action_part(frequency_iter, FREQUENCY_CHEESE, make_cheese)
+    check_action_part(frequency_iter, FREQUENCY_SILKEN_TOFU, make_silken_tofu)
+    check_action_part(frequency_iter, FREQUENCY_MILK_TOFU, make_milk_and_tofu)
+    check_action_part(frequency_iter, FREQUENCY_BREAD, bake_dough)
+    check_action_part(frequency_iter, FREQUENCY_TOAST, make_toast)
+    check_action_part(frequency_iter, FREQUENCY_WOOL, make_wool)
+    check_action_part(frequency_iter, FREQUENCY_STRING, make_string)
+    check_action_part(frequency_iter, FREQUENCY_APPLE, harvest_apples)
 end
 
 function core()

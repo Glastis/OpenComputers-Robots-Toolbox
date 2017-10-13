@@ -293,6 +293,29 @@ local function is_full()
 end
 inventory.is_full = is_full
 
+--[[
+----	purpose: Tell if there is at least one occupied slot in robot.
+----
+----	return: true		robot have no empty slot
+----			false		robot have at least one empty slot
+--]]
+local function is_empty()
+	local slot
+	local data
+
+	slot = robot.inventorySize()
+	while slot > 0 do
+		data = component.inventory_controller.getStackInInternalSlot(slot)
+
+		if data then
+			return false
+		end
+		slot = slot - 1
+	end
+	return true
+end
+inventory.is_empty = is_empty
+
 local function get_size()
 	return robot.inventorySize()
 end

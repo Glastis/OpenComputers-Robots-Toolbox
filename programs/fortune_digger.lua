@@ -1,20 +1,18 @@
-local move = require('movement')
 local utilitie = require('utilities')
-local energy = require('energy')
 local chest = require('chest')
 local inventory = require('inventory')
-local environement = require('environement')
-local crafting = require('crafting')
 local net = require('net')
 
 local component = require('component')
 local robot = require('robot')
 local side = require('sides')
 
-local PASTE_URL = 'https://pastebin.com/raw/KzP5EAya'
+local PASTE_URL = 'https://pastebin.com/raw/nSL5UAKp'
 local FILEPATH = 'fortune'
 local CHEST_SIDE_INPUT = side.up
 local CHEST_SIDE_OUTPUT = side.down
+
+local arg = {...}
 
 local ore_list
 
@@ -24,6 +22,8 @@ local ore_list
 
 function init()
     ore_list = {}
+    ore_list[#ore_list + 1] = 'ProjRed|Exploration:projectred.exploration.ore'
+    ore_list[#ore_list + 1] = 'qCraft:quantumore'
     ore_list[#ore_list + 1] = 'minecraft:coal_ore'
     ore_list[#ore_list + 1] = 'minecraft:diamond_ore'
 end
@@ -37,10 +37,10 @@ function get_ores()
 
     i = #ore_list
     while i > 0 do
-        if chest.get_item_from_chest(ore_list[i]) then
+        if chest.get_item_from_chest(ore_list[i], nil, nil, CHEST_SIDE_INPUT) then
             return i
         end
-        i = i + 1
+        i = i - 1
     end
     return false
 end
@@ -57,9 +57,9 @@ function drop_all_non_ore()
     while slot > 0 do
         data = component.inventory_controller.getStackInInternalSlot(slot)
         if data and not utilitie.is_elem_in_list(ore_list, data.name) then
-            robot.dropDown(slot)
+            chest.drop_slot_to_chest(CHEST_SIDE_OUTPUT, slot)
         end
-        slot = slot + 1
+        slot = slot - 1
     end
 end
 
@@ -94,6 +94,20 @@ function core()
         drop_all_non_ore()
         ore_id = get_ores()
     end
+end
+
+function update()
+    print('Updating...')
+    if net.get_page_to_file(PASTE_URL, FILEPATH) then
+        print('Updated successfully.')
+        return true
+    end
+    print('Failed to update.')
+    return false
+end
+
+if arg[1] and (arg[1] == '-u' or arg[1] == '--update') then
+    return update()
 end
 
 init()
